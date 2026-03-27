@@ -15,9 +15,9 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "Sovereign Architect – Your Favorite Services, Simplified",
+  title: "MyBookins – Your Favorite Services, Simplified",
   description:
-    "Book experts, reserve resources, and manage appointments in one click. A Sovereign system built for absolute precision and zero friction.",
+    "Book experts, reserve resources, and manage appointments in one click. A complete system built for absolute precision and zero friction.",
 };
 
 export default function RootLayout({
