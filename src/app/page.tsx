@@ -4,7 +4,7 @@ export default function Home() {
       {/* ── TOP NAVIGATION ── */}
       <nav className="sa-nav">
         <div className="sa-nav-inner">
-          <a href="/" className="sa-nav-logo">My Bookings</a>
+          <a href="/" className="sa-nav-logo">MyBookins</a>
 
           <ul className="sa-nav-links">
             <li><a href="#" className="sa-nav-link active">Discover</a></li>
