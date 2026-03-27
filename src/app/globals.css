@@ -1,19 +1,81 @@
 @import "tailwindcss";
 
-:root {
+/* ============= LIGHT THEME (Default) ============= */
+:root,
+html.light {
+  color-scheme: light;
+
+  /* Font Variables */
   --font-inter: "Inter", -apple-system, Roboto, Helvetica, sans-serif;
   --font-manrope: "Manrope", -apple-system, Roboto, Helvetica, sans-serif;
   --radius: 0.5rem;
+
+  /* Primary Colors */
+  --color-navy: #0B1C30;
+  --color-navy-dark: #131B2E;
+  --color-body: #45464D;
+  --color-muted: #76777D;
+
+  /* UI Colors */
+  --color-blue-light: #EFF4FF;
+  --color-blue-accent: #DCE9FF;
+  --color-green: #059669;
+  --color-green-dark: #065F46;
+  --color-green-light: #D1FAE5;
+
+  /* Backgrounds */
+  --color-light: #F8F9FF;
+  --color-light-secondary: #F1F5F9;
+  --color-white: #FFFFFF;
+  --color-black: #000000;
+
+  /* Borders & Dividers */
+  --color-border-subtle: rgba(198, 198, 205, 0.15);
+  --color-border-solid: rgba(198, 198, 205, 0.20);
+
+  /* Text Colors */
+  --color-text-primary: #0B1C30;
+  --color-text-secondary: #45464D;
+  --color-text-tertiary: #76777D;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    color-scheme: dark;
-  }
+/* ============= DARK THEME ============= */
+html.dark {
+  color-scheme: dark;
+
+  /* Primary Colors - Inverted for dark mode */
+  --color-navy: #E0E0E0;
+  --color-navy-dark: #B0B0B0;
+  --color-body: #B0B0B0;
+  --color-muted: #808080;
+
+  /* UI Colors - Adjusted for dark mode */
+  --color-blue-light: #2A3B4A;
+  --color-blue-accent: #3A4B5A;
+  --color-green: #10B981;
+  --color-green-dark: #34D399;
+  --color-green-light: #064E3B;
+
+  /* Backgrounds */
+  --color-light: #1E1E1E;
+  --color-light-secondary: #2A2A2A;
+  --color-white: #1E1E1E;
+  --color-black: #FFFFFF;
+
+  /* Borders & Dividers */
+  --color-border-subtle: rgba(255, 255, 255, 0.10);
+  --color-border-solid: rgba(255, 255, 255, 0.20);
+
+  /* Text Colors */
+  --color-text-primary: #E0E0E0;
+  --color-text-secondary: #B0B0B0;
+  --color-text-tertiary: #808080;
 }
 
 body {
   font-family: var(--font-inter);
+  background-color: var(--color-light);
+  color: var(--color-text-primary);
 }
 
 html {
