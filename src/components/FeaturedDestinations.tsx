@@ -35,29 +35,61 @@ const businesses = [
 
 export default function FeaturedDestinations() {
   return (
-    <section className="w-full py-24 px-6 bg-light">
-      <div className="max-w-6xl mx-auto">
+    <section
+      className="w-full"
+      style={{
+        background: '#F8F9FF',
+        paddingTop: '96px',
+        paddingBottom: '96px',
+      }}
+    >
+      <div
+        className="mx-auto px-6 flex flex-col gap-16"
+        style={{ maxWidth: '1280px' }}
+      >
         {/* Header */}
-        <div className="flex justify-between items-end gap-8 mb-16">
+        <div className="flex justify-between items-end gap-8">
           <div className="flex flex-col gap-4">
-            <h2 className="font-manrope text-4xl font-bold text-navy">
+            <h2
+              className="font-manrope font-extrabold"
+              style={{
+                fontSize: '36px',
+                color: '#0B1C30',
+                lineHeight: '40px',
+                letterSpacing: '-1.8px',
+              }}
+            >
               Featured Destinations
             </h2>
-            <p className="text-body max-w-md">
-              The best-in-class service providers from across the MyBookins
-              network, vetted for quality and consistency.
+            <p
+              className="font-inter font-normal text-base"
+              style={{ color: '#45464D', maxWidth: '448px' }}
+            >
+              The most sought-after experts across the MyBookins network,
+              vetted for quality and consistency.
             </p>
           </div>
           <a
             href="#"
-            className="pb-1 border-b-2 border-navy text-navy font-bold text-sm uppercase tracking-wider hover:text-opacity-80 transition-colors whitespace-nowrap"
+            className="font-inter text-sm font-bold uppercase pb-1 flex-shrink-0"
+            style={{
+              color: '#0B1C30',
+              letterSpacing: '1.4px',
+              borderBottom: '2px solid #000',
+            }}
           >
             View All Businesses
           </a>
         </div>
 
         {/* Grid */}
-        <div className="grid grid-cols-3 gap-10">
+        <div
+          className="grid"
+          style={{
+            gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+            gap: '40px',
+          }}
+        >
           {businesses.map((business, index) => (
             <BusinessCard key={index} {...business} />
           ))}
