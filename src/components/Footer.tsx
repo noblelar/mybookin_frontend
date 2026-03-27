@@ -16,13 +16,13 @@ export default function Footer() {
         <div
           className="grid gap-8"
           style={{
-            gridTemplateColumns: 'repeat(6, minmax(0, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(150px, 100%), 1fr))',
           }}
         >
           {/* Brand Column (2 cols) */}
           <div
-            className="flex flex-col gap-4"
-            style={{ gridColumn: 'span 2' }}
+            className="flex flex-col gap-4 col-span-1 md:col-span-2"
+            style={{ minWidth: '320px' }}
           >
             <span
               className="font-inter font-extrabold uppercase"

@@ -43,12 +43,12 @@ export default function HowItWorks() {
       className="w-full"
       style={{
         background: '#EFF4FF',
-        paddingTop: '96px',
-        paddingBottom: '96px',
+        paddingTop: '48px',
+        paddingBottom: '48px',
       }}
     >
       <div
-        className="mx-auto px-6 flex flex-col gap-20"
+        className="mx-auto px-4 md:px-6 flex flex-col gap-12 md:gap-20"
         style={{ maxWidth: '1280px' }}
       >
         {/* Header */}
@@ -66,9 +66,9 @@ export default function HowItWorks() {
           <h2
             className="font-manrope font-extrabold text-center"
             style={{
-              fontSize: '48px',
+              fontSize: 'clamp(28px, 5vw, 48px)',
               color: '#0B1C30',
-              lineHeight: '48px',
+              lineHeight: '1.1',
               letterSpacing: '-2.4px',
             }}
           >
@@ -82,13 +82,13 @@ export default function HowItWorks() {
           style={{
             background: '#FFF',
             border: '1px solid rgba(198, 198, 205, 0.20)',
-            gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(300px, 100%), 1fr))',
           }}
         >
           {steps.map((step, index) => (
             <div
               key={index}
-              className="flex flex-col relative p-12"
+              className="flex flex-col relative p-6 md:p-12"
               style={{
                 borderRight: step.borderRight
                   ? '1px solid rgba(198, 198, 205, 0.20)'

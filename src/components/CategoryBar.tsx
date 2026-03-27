@@ -6,7 +6,7 @@ import {
   TutorIcon,
   SpaIcon,
   FitnessIcon,
-} from '@/components/icons'
+} from '@/assets/icons/icons'
 
 const categories = [
   { label: 'Barber', icon: BarberIcon, active: true },
@@ -21,23 +21,23 @@ const categories = [
 export default function CategoryBar() {
   return (
     <div
-      className="w-full overflow-hidden border-b"
+      className="w-full overflow-x-hidden border-b"
       style={{
         background: '#F8F9FF',
         borderColor: 'rgba(198, 198, 205, 0.15)',
       }}
     >
       <div
-        className="flex items-center gap-4 overflow-x-auto px-6"
-        style={{ padding: '24px' }}
+        className="flex items-center gap-2 md:gap-4 overflow-x-auto px-4 md:px-6"
+        style={{ padding: '16px 16px', paddingRight: '24px' }}
       >
         {/* Label */}
-        <div className="flex-shrink-0 pr-4">
+        <div className="flex-shrink-0 pr-2 md:pr-4">
           <span
-            className="font-inter text-[10px] font-black uppercase"
+            className="font-inter text-[10px] font-black uppercase whitespace-nowrap"
             style={{ color: '#76777D', letterSpacing: '1px' }}
           >
-            Browse Niches
+            Browse
           </span>
         </div>
 

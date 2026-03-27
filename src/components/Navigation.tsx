@@ -8,17 +8,17 @@ export default function Navigation() {
         backdropFilter: 'blur(6px)',
       }}
     >
-      <div className="flex h-16 max-w-[1280px] mx-auto px-6 justify-between items-center">
+      <div className="flex h-16 max-w-[1280px] mx-auto px-4 md:px-6 justify-between items-center">
         {/* Logo */}
         <a
           href="/"
-          className="font-inter text-xl font-black uppercase tracking-[-0.05em] text-[#0F172A]"
+          className="font-inter text-sm md:text-xl font-black uppercase tracking-[-0.05em] text-[#0F172A] flex-shrink-0"
         >
           MyBookins
         </a>
 
-        {/* Nav Links */}
-        <ul className="flex items-center gap-8 list-none m-0 p-0">
+        {/* Nav Links - Hidden on mobile */}
+        <ul className="hidden md:flex items-center gap-8 list-none m-0 p-0">
           <li>
             <a
               href="#"
@@ -54,18 +54,19 @@ export default function Navigation() {
         </ul>
 
         {/* Actions */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 md:gap-4">
           <a
             href="#"
-            className="font-inter text-sm font-bold text-[#64748B] uppercase tracking-[0.1em] px-4 py-2 hover:text-[#0F172A] transition-colors"
+            className="font-inter text-xs md:text-sm font-bold text-[#64748B] uppercase tracking-[0.1em] px-2 md:px-4 py-2 hover:text-[#0F172A] transition-colors hidden md:block"
           >
-            Admin Login
+            Admin
           </a>
           <a
             href="#"
-            className="font-inter text-sm font-bold text-white uppercase tracking-[0.1em] bg-black px-6 py-2.5 hover:bg-gray-900 transition-colors shadow-md"
+            className="font-inter text-xs md:text-sm font-bold text-white uppercase tracking-[0.1em] bg-black px-3 md:px-6 py-2 md:py-2.5 hover:bg-gray-900 transition-colors shadow-md"
           >
-            Get Started
+            <span className="md:hidden">Get</span>
+            <span className="hidden md:inline">Get Started</span>
           </a>
         </div>
       </div>

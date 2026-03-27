@@ -46,30 +46,30 @@ export default function Testimonials() {
       className="w-full"
       style={{
         background: '#F8F9FF',
-        paddingTop: '96px',
-        paddingBottom: '96px',
+        paddingTop: '48px',
+        paddingBottom: '48px',
       }}
     >
       <div
-        className="mx-auto px-6 flex flex-col gap-12"
+        className="mx-auto px-4 md:px-6 flex flex-col gap-8 md:gap-12"
         style={{ maxWidth: '1280px' }}
       >
         {/* Header */}
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
           <h2
             className="font-manrope font-extrabold"
             style={{
-              fontSize: '36px',
+              fontSize: 'clamp(24px, 5vw, 36px)',
               color: '#0B1C30',
               letterSpacing: '-1.8px',
-              lineHeight: '40px',
+              lineHeight: '1.1',
             }}
           >
             Voices from the Grid
           </h2>
 
-          {/* Navigation Arrows */}
-          <div className="flex gap-3">
+          {/* Navigation Arrows - Hidden on mobile */}
+          <div className="flex gap-3 hidden md:flex">
             <button
               className="flex items-center justify-center"
               style={{
@@ -101,8 +101,8 @@ export default function Testimonials() {
         <div
           className="grid"
           style={{
-            gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-            gap: '32px',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(300px, 100%), 1fr))',
+            gap: '20px',
           }}
         >
           {testimonials.map((testimonial, index) => (

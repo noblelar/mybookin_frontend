@@ -39,30 +39,30 @@ export default function FeaturedDestinations() {
       className="w-full"
       style={{
         background: '#F8F9FF',
-        paddingTop: '96px',
-        paddingBottom: '96px',
+        paddingTop: '48px',
+        paddingBottom: '48px',
       }}
     >
       <div
-        className="mx-auto px-6 flex flex-col gap-16"
+        className="mx-auto px-4 md:px-6 flex flex-col gap-8 md:gap-16"
         style={{ maxWidth: '1280px' }}
       >
         {/* Header */}
-        <div className="flex justify-between items-end gap-8">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4 md:gap-8">
           <div className="flex flex-col gap-4">
             <h2
               className="font-manrope font-extrabold"
               style={{
-                fontSize: '36px',
+                fontSize: 'clamp(24px, 5vw, 36px)',
                 color: '#0B1C30',
-                lineHeight: '40px',
+                lineHeight: '1.1',
                 letterSpacing: '-1.8px',
               }}
             >
               Featured Destinations
             </h2>
             <p
-              className="font-inter font-normal text-base"
+              className="font-inter font-normal text-sm md:text-base"
               style={{ color: '#45464D', maxWidth: '448px' }}
             >
               The most sought-after experts across the MyBookins network,
@@ -71,14 +71,14 @@ export default function FeaturedDestinations() {
           </div>
           <a
             href="#"
-            className="font-inter text-sm font-bold uppercase pb-1 flex-shrink-0"
+            className="font-inter text-xs md:text-sm font-bold uppercase pb-1 flex-shrink-0 w-fit"
             style={{
               color: '#0B1C30',
               letterSpacing: '1.4px',
               borderBottom: '2px solid #000',
             }}
           >
-            View All Businesses
+            View All
           </a>
         </div>
 
@@ -86,8 +86,8 @@ export default function FeaturedDestinations() {
         <div
           className="grid"
           style={{
-            gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-            gap: '40px',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(300px, 100%), 1fr))',
+            gap: '20px',
           }}
         >
           {businesses.map((business, index) => (

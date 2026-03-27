@@ -1,19 +1,34 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+
 export default function HeroSection() {
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768)
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
   return (
     <section
-      className="w-full border-b overflow-hidden"
+      className="w-full border-b overflow-x-hidden"
       style={{
         background: '#F8F9FF',
         borderColor: 'rgba(198, 198, 205, 0.15)',
-        minHeight: '870px',
+        minHeight: isMobile ? 'auto' : '870px',
       }}
     >
       <div
-        className="max-w-[1280px] mx-auto grid gap-12 px-6"
+        className="max-w-[1280px] mx-auto px-4 md:px-6"
         style={{
-          paddingTop: '80px',
-          paddingBottom: '80px',
-          gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+          paddingTop: isMobile ? '40px' : '80px',
+          paddingBottom: isMobile ? '40px' : '80px',
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, minmax(0, 1fr))',
+          gap: isMobile ? '32px' : '48px',
         }}
       >
         {/* Left: Content */}
@@ -35,8 +50,9 @@ export default function HeroSection() {
           <h1
             className="font-manrope leading-none"
             style={{
-              fontSize: '72px',
-              letterSpacing: '-3.6px',
+              fontSize: isMobile ? '40px' : '72px',
+              letterSpacing: isMobile ? '-2px' : '-3.6px',
+              lineHeight: '1.1',
             }}
           >
             <span className="font-extrabold" style={{ color: '#0B1C30' }}>
@@ -53,8 +69,12 @@ export default function HeroSection() {
           {/* Description */}
           <div className="max-w-[576px] pb-4">
             <p
-              className="font-inter font-normal text-lg"
-              style={{ color: '#45464D', lineHeight: '29.25px' }}
+              className="font-inter font-normal"
+              style={{
+                fontSize: isMobile ? '14px' : '18px',
+                color: '#45464D',
+                lineHeight: '1.6',
+              }}
             >
               Book experts, reserve resources, and manage appointments in one
               click. A Sovereign system built for absolute precision and zero
@@ -64,16 +84,17 @@ export default function HeroSection() {
 
           {/* Search Bar */}
           <div
-            className="flex items-stretch gap-2 p-2 max-w-[672px]"
+            className="flex flex-col md:flex-row items-stretch gap-2 p-2 max-w-full md:max-w-[672px]"
             style={{
               background: '#FFF',
               border: '1px solid rgba(198, 198, 205, 0.10)',
               boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+              flexWrap: isMobile ? 'wrap' : 'nowrap',
             }}
           >
             {/* Search Input */}
             <div
-              className="flex items-center px-4 flex-1"
+              className="flex items-center px-4 flex-1 min-w-0"
               style={{ background: '#EFF4FF' }}
             >
               <svg
@@ -89,9 +110,9 @@ export default function HeroSection() {
                   fill="#76777D"
                 />
               </svg>
-              <div className="py-4 px-3 flex-1">
+              <div className="py-4 px-3 flex-1 min-w-0">
                 <span
-                  className="font-inter text-sm font-medium"
+                  className="font-inter text-sm font-medium whitespace-nowrap overflow-hidden text-ellipsis"
                   style={{ color: '#6B7280' }}
                 >
                   What are you looking for?
@@ -101,7 +122,7 @@ export default function HeroSection() {
 
             {/* Category Selector */}
             <div
-              className="flex items-center px-4 min-w-[160px] cursor-pointer"
+              className="flex items-center px-4 min-w-[120px] md:min-w-[160px] cursor-pointer"
               style={{ background: '#EFF4FF' }}
             >
               <svg
@@ -118,7 +139,7 @@ export default function HeroSection() {
                 />
               </svg>
               <span
-                className="font-inter text-sm font-bold flex-1"
+                className="font-inter text-sm font-bold flex-1 hidden md:block"
                 style={{ color: '#0B1C30' }}
               >
                 Category
@@ -142,7 +163,7 @@ export default function HeroSection() {
 
             {/* Search Button */}
             <button
-              className="flex items-center gap-2 px-8 font-inter text-sm font-bold uppercase text-white hover:bg-gray-900 transition-colors"
+              className="flex items-center justify-center gap-2 px-6 md:px-8 font-inter text-xs md:text-sm font-bold uppercase text-white hover:bg-gray-900 transition-colors flex-1 md:flex-none"
               style={{
                 background: '#000',
                 letterSpacing: '1.4px',
@@ -162,76 +183,79 @@ export default function HeroSection() {
                   fill="white"
                 />
               </svg>
-              Search Nearby
+              <span className="hidden md:inline">Search Nearby</span>
+              <span className="md:hidden">Search</span>
             </button>
           </div>
         </div>
 
-        {/* Right: Dual-Focus Visual */}
-        <div className="relative" style={{ height: '600px' }}>
-          {/* Main panel - Business Architect View (top right) */}
-          <div
-            className="absolute overflow-hidden"
-            style={{
-              width: '474px',
-              height: '500px',
-              right: '0',
-              top: '0',
-              background: '#D3E4FE',
-              border: '1px solid rgba(198, 198, 205, 0.20)',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-            }}
-          >
-            <img
-              src="https://api.builder.io/api/v1/image/assets/TEMP/f2aa736095396c625377fa3822964fee02b028e5?width=943"
-              alt="Business Architect dashboard view"
-              className="w-full h-full object-cover"
-              style={{ opacity: 0.8 }}
-            />
+        {/* Right: Dual-Focus Visual - Hidden on mobile */}
+        {!isMobile && (
+          <div className="relative hidden md:block" style={{ height: '600px' }}>
+            {/* Main panel - Business Architect View (top right) */}
             <div
-              className="absolute"
-              style={{ top: '17px', left: '17px', background: '#000' }}
+              className="absolute overflow-hidden"
+              style={{
+                width: '474px',
+                height: '500px',
+                right: '0',
+                top: '0',
+                background: '#D3E4FE',
+                border: '1px solid rgba(198, 198, 205, 0.20)',
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+              }}
             >
-              <span
-                className="font-inter text-[10px] font-bold uppercase px-3 py-1 text-white block"
-                style={{ letterSpacing: '1px' }}
+              <img
+                src="https://api.builder.io/api/v1/image/assets/TEMP/f2aa736095396c625377fa3822964fee02b028e5?width=943"
+                alt="Business Architect dashboard view"
+                className="w-full h-full object-cover"
+                style={{ opacity: 0.8 }}
+              />
+              <div
+                className="absolute"
+                style={{ top: '17px', left: '17px', background: '#000' }}
               >
-                Business Architect View
-              </span>
+                <span
+                  className="font-inter text-[10px] font-bold uppercase px-3 py-1 text-white block"
+                  style={{ letterSpacing: '1px' }}
+                >
+                  Business Architect View
+                </span>
+              </div>
             </div>
-          </div>
 
-          {/* Overlay panel - User Interface (bottom left) */}
-          <div
-            className="absolute overflow-hidden"
-            style={{
-              width: '266px',
-              height: '450px',
-              left: '0',
-              top: '150px',
-              background: '#FFF',
-              border: '8px solid #EFF4FF',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-            }}
-          >
-            <img
-              src="https://api.builder.io/api/v1/image/assets/TEMP/7112e148ef0f9b526f7070a4f02abfee6a33df1c?width=501"
-              alt="User interface view"
-              className="w-full h-full object-cover"
-            />
+            {/* Overlay panel - User Interface (bottom left) */}
             <div
-              className="absolute"
-              style={{ top: '24px', left: '24px', background: '#5C5E68' }}
+              className="absolute overflow-hidden"
+              style={{
+                width: '266px',
+                height: '450px',
+                left: '0',
+                top: '150px',
+                background: '#FFF',
+                border: '8px solid #EFF4FF',
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+              }}
             >
-              <span
-                className="font-inter text-[10px] font-bold uppercase px-3 py-1 text-white block"
-                style={{ letterSpacing: '1px' }}
+              <img
+                src="https://api.builder.io/api/v1/image/assets/TEMP/7112e148ef0f9b526f7070a4f02abfee6a33df1c?width=501"
+                alt="User interface view"
+                className="w-full h-full object-cover"
+              />
+              <div
+                className="absolute"
+                style={{ top: '24px', left: '24px', background: '#5C5E68' }}
               >
-                User Interface
-              </span>
+                <span
+                  className="font-inter text-[10px] font-bold uppercase px-3 py-1 text-white block"
+                  style={{ letterSpacing: '1px' }}
+                >
+                  User Interface
+                </span>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </section>
   )

@@ -22,12 +22,12 @@ export default function BusinessSection() {
       className="w-full overflow-hidden"
       style={{
         background: '#000',
-        paddingTop: '96px',
-        paddingBottom: '96px',
+        paddingTop: '48px',
+        paddingBottom: '48px',
       }}
     >
       <div
-        className="mx-auto px-6 flex items-center gap-16"
+        className="mx-auto px-4 md:px-6 flex flex-col md:flex-row md:items-center gap-8 md:gap-16"
         style={{ maxWidth: '1280px' }}
       >
         {/* Left Side */}
@@ -36,8 +36,8 @@ export default function BusinessSection() {
           <h2
             className="font-manrope font-extrabold text-white"
             style={{
-              fontSize: '48px',
-              lineHeight: '60px',
+              fontSize: 'clamp(28px, 5vw, 48px)',
+              lineHeight: '1.2',
               letterSpacing: '-2.4px',
             }}
           >
@@ -49,8 +49,8 @@ export default function BusinessSection() {
           {/* Description */}
           <div style={{ maxWidth: '512px', opacity: 0.8 }}>
             <p
-              className="font-inter font-medium text-lg"
-              style={{ color: '#DAE2FD', lineHeight: '28px' }}
+              className="font-inter font-medium text-sm md:text-lg"
+              style={{ color: '#DAE2FD', lineHeight: '1.6' }}
             >
               The MyBookins platform provides more than just a calendar. It's a
               full-stack command center for multi-tenant resource management.
