@@ -27,6 +27,14 @@ export default function AccountDetailsForm() {
         placeholder="julian.vane@architect.com"
       />
 
+      {/* Phone Number */}
+      <FormInput
+        id="phone"
+        label="Phone Number"
+        type="tel"
+        placeholder="+44 (0) 7700 900000"
+      />
+
       {/* Password */}
       <PasswordInput
         id="password"

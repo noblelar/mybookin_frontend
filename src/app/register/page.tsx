@@ -1,5 +1,4 @@
 import OnboardingNavbar from '@/components/register/OnboardingNavbar'
-import StepHeader from '@/components/register/StepHeader'
 import AccountDetailsForm from '@/components/register/AccountDetailsForm'
 import SecurityInfoCard from '@/components/register/SecurityInfoCard'
 import BottomActionBar from '@/components/register/BottomActionBar'
@@ -13,16 +12,8 @@ export default function RegisterPage() {
       {/* Main content — grows to fill viewport between nav and bottom bar */}
       <main className="flex-1 flex flex-col">
         <div className="flex-1 max-w-[1280px] w-full mx-auto px-4 md:px-6 py-10 md:py-16">
-          {/* Step header spanning full width */}
-          <StepHeader
-            currentStep={2}
-            totalSteps={5}
-            title="Account Details"
-            percentComplete={40}
-          />
-
           {/* Two-column layout: form + info card */}
-          <div className="mt-8 md:mt-12 grid grid-cols-1 md:grid-cols-[1fr_auto] gap-6 md:gap-10 items-start">
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3 md:gap-6 items-start">
             {/* Left: Account form */}
             <div className="w-full max-w-lg">
               <AccountDetailsForm />
