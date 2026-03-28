@@ -1,7 +1,7 @@
 import OnboardingNavbar from '@/components/register/OnboardingNavbar'
 import AccountDetailsForm from '@/components/register/AccountDetailsForm'
 import SecurityInfoCard from '@/components/register/SecurityInfoCard'
-import BottomActionBar from '@/components/register/BottomActionBar'
+
 
 export default function RegisterPage() {
   return (
@@ -13,7 +13,7 @@ export default function RegisterPage() {
       <main className="flex-1 flex flex-col">
         <div className="flex-1 max-w-[1280px] w-full mx-auto px-4 md:px-6 py-10 md:py-16">
           {/* Two-column layout: form + info card */}
-          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3 md:gap-6 items-start">
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3 md:gap-6 items-center justify-center mx-auto">
             {/* Left: Account form */}
             <div className="w-full max-w-lg">
               <AccountDetailsForm />
@@ -28,7 +28,6 @@ export default function RegisterPage() {
       </main>
 
       {/* Sticky bottom bar */}
-      <BottomActionBar />
     </div>
   )
 }
