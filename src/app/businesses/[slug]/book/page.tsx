@@ -280,22 +280,6 @@ export default function BookPage({
             </div>
           </div>
 
-          {/* Bottom stats bar */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {[
-              { label: 'Staff Utilization', value: '84.2%' },
-              { label: 'Resource Load', value: 'High' },
-              { label: 'Booking Lead', value: '2.4 Days' },
-              { label: 'Cancellation', value: '0.8%' },
-            ].map(stat => (
-              <div key={stat.label} className="border-l-2 border-slate-400 pl-3 py-1">
-                <p className="text-[9px] font-black tracking-widest uppercase text-slate-400 mb-1">
-                  {stat.label}
-                </p>
-                <p className="text-xl font-extrabold text-[#0B1C30]">{stat.value}</p>
-              </div>
-            ))}
-          </div>
         </div>
 
         {/* ── Right: Service summary sidebar (desktop) ────────────────── */}
