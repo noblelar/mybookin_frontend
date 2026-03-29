@@ -1,9 +1,20 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { useRouter } from 'next/navigation'
+
+const HERO_CATEGORIES = [
+  'Barber', 'Hair', 'Nails', 'Restaurant', 'Tutor', 'Spa', 'Fitness',
+  'Hair Cut', 'Hair Styling', 'Nail Art', 'Beard Cut', 'Massage', 'Pedicure', 'Lip Tinting',
+]
 
 export default function HeroSection() {
   const [isMobile, setIsMobile] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState('')
+  const [categoryOpen, setCategoryOpen] = useState(false)
+  const categoryRef = useRef<HTMLDivElement>(null)
+  const router = useRouter()
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768)
@@ -11,6 +22,23 @@ export default function HeroSection() {
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (categoryRef.current && !categoryRef.current.contains(e.target as Node)) {
+        setCategoryOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  function handleSearch() {
+    const params = new URLSearchParams()
+    if (searchQuery) params.set('q', searchQuery)
+    if (selectedCategory) params.set('category', selectedCategory)
+    router.push(`/find?${params.toString()}`)
+  }
 
   return (
     <section
@@ -110,20 +138,23 @@ export default function HeroSection() {
                   fill="#76777D"
                 />
               </svg>
-              <div className="py-4 px-3 flex-1 min-w-0">
-                <span
-                  className="font-inter text-sm font-medium whitespace-nowrap overflow-hidden text-ellipsis"
-                  style={{ color: '#6B7280' }}
-                >
-                  What are you looking for?
-                </span>
-              </div>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleSearch()}
+                placeholder="What are you looking for?"
+                className="py-4 px-3 flex-1 min-w-0 bg-transparent outline-none font-inter text-sm font-medium"
+                style={{ color: '#0B1C30' }}
+              />
             </div>
 
             {/* Category Selector */}
             <div
-              className="flex items-center px-4 min-w-[120px] md:min-w-[160px] cursor-pointer"
+              ref={categoryRef}
+              className="relative flex items-center px-4 min-w-[120px] md:min-w-[160px] cursor-pointer"
               style={{ background: '#EFF4FF' }}
+              onClick={() => setCategoryOpen(!categoryOpen)}
             >
               <svg
                 className="mr-2 flex-shrink-0"
@@ -139,10 +170,10 @@ export default function HeroSection() {
                 />
               </svg>
               <span
-                className="font-inter text-sm font-bold flex-1 hidden md:block"
-                style={{ color: '#0B1C30' }}
+                className="font-inter text-sm font-bold flex-1 hidden md:block truncate"
+                style={{ color: selectedCategory ? '#0B1C30' : '#6B7280' }}
               >
-                Category
+                {selectedCategory || 'Category'}
               </span>
               <svg
                 width="21"
@@ -150,6 +181,7 @@ export default function HeroSection() {
                 viewBox="0 0 21 21"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
+                className={`transition-transform ${categoryOpen ? 'rotate-180' : ''}`}
               >
                 <path
                   d="M6.2998 8.39999L10.4998 12.6L14.6998 8.39999"
@@ -159,10 +191,25 @@ export default function HeroSection() {
                   strokeLinejoin="round"
                 />
               </svg>
+              {categoryOpen && (
+                <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 shadow-lg z-50 min-w-[180px] max-h-60 overflow-y-auto">
+                  {HERO_CATEGORIES.map(cat => (
+                    <button
+                      key={cat}
+                      onClick={e => { e.stopPropagation(); setSelectedCategory(cat); setCategoryOpen(false) }}
+                      className="w-full text-left px-4 py-2.5 text-sm font-medium hover:bg-[#EFF4FF] transition-colors"
+                      style={{ color: selectedCategory === cat ? '#235AFF' : '#0B1C30' }}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Search Button */}
             <button
+              onClick={handleSearch}
               className="flex items-center justify-center gap-2 px-6 md:px-8 font-inter text-xs md:text-sm font-bold uppercase text-white hover:bg-gray-900 transition-colors flex-1 md:flex-none"
               style={{
                 background: '#000',
