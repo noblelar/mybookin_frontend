@@ -47,7 +47,7 @@ export default function LoginHeroPanel() {
         <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/15 backdrop-blur-sm border border-white/20 w-fit">
           <ShieldIcon />
           <span className="font-inter text-sm font-bold text-white uppercase tracking-[0.5px]">
-            MyBookins
+            MyBookIns
           </span>
         </div>
 

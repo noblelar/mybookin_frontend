@@ -26,9 +26,9 @@ export default function ManageBusinessTopBar({
           </svg>
         </button>
 
-        {/* Brand — "Sovereign Architect with MyBookins" */}
-        <span className="font-black text-[#0B1C30] text-sm tracking-tight whitespace-nowrap flex-shrink-0">
-          Sovereign Architect <span className="text-[#235AFF]">with</span> MyBookins
+        {/* Brand — "MyBookIns" */}
+        <span className="font-black text-[#235AFF] text-sm tracking-tight whitespace-nowrap flex-shrink-0">
+          MyBookIns
         </span>
 
         {/* Tab nav */}

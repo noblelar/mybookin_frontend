@@ -4,7 +4,7 @@ import BusinessTable from '@/components/admin/businesses/BusinessTable'
 import BusinessBottom from '@/components/admin/businesses/BusinessBottom'
 
 export const metadata = {
-  title: 'Business Directory | MyBookins Admin',
+  title: 'Business Directory | MyBookIns Admin',
 }
 
 export default function BusinessDirectoryPage() {

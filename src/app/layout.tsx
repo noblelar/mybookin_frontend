@@ -15,7 +15,7 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "MyBookins – Your Favorite Services, Simplified",
+  title: "MyBookIns – Your Favorite Services, Simplified",
   description:
     "Book experts, reserve resources, and manage appointments in one click. A complete system built for absolute precision and zero friction.",
 };

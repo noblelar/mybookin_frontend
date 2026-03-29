@@ -1,7 +1,7 @@
 const testimonials = [
   {
     quote:
-      '"The most precise booking system I\'ve ever encountered. Managing 12 locations across London used to be a nightmare until I found MyBookins."',
+      '"The most precise booking system I\'ve ever encountered. Managing 12 locations across London used to be a nightmare until I found MyBookIns."',
     author: 'Marcus T.',
     role: 'Enterprise Owner',
     image:

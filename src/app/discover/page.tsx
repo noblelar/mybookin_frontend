@@ -6,7 +6,7 @@ import DiscoveryFooter from '@/components/discovery/DiscoveryFooter'
 import MobileTabBar from '@/components/discovery/MobileTabBar'
 
 export const metadata = {
-  title: 'Discovery Catalog | MyBookins',
+  title: 'Discovery Catalog | MyBookIns',
   description: 'Discover and book top-rated local services near you.',
 }
 

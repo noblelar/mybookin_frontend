@@ -25,8 +25,8 @@ export default function DiscoveryNavbar() {
 
           {/* Logo — centered on mobile, left on desktop */}
           <Link href="/" className="md:flex-shrink-0 absolute left-1/2 -translate-x-1/2 md:static md:translate-x-0">
-            <span className="font-black text-[#0F172A] tracking-tight uppercase text-base md:text-lg leading-none">
-              MyBookins
+            <span className="font-black text-[#235AFF] tracking-tight uppercase text-base md:text-lg leading-none">
+              MyBookIns
             </span>
           </Link>
 

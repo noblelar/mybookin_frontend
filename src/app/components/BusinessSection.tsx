@@ -33,7 +33,7 @@ export default function BusinessSection() {
           </h2>
 
           <p className="sa-biz-description">
-            The Sovereign Architect provides more than just a calendar. It&apos;s a full-stack command center for multi-tenant resource management.
+            MyBookIns provides more than just a calendar. It&apos;s a full-stack command center for multi-tenant resource management.
           </p>
 
           <div className="sa-feature-list">

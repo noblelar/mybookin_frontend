@@ -5,10 +5,10 @@ export default function DiscoveryFooter() {
         {/* Brand */}
         <div className="flex flex-col gap-0.5">
           <span className="text-[#0F172A] font-extrabold text-sm uppercase tracking-tight">
-            MyBookins
+            MyBookIns
           </span>
           <span className="text-[#64748B] text-xs">
-            © 2024 MyBookins. All rights reserved.
+            © 2024 MyBookIns. All rights reserved.
           </span>
         </div>
 

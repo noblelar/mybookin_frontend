@@ -134,7 +134,7 @@ function SidebarContent({ collapsed, setCollapsed, resolvedActivePath, onClose }
           </div>
           {!collapsed && (
             <div className="text-[9px] font-bold tracking-[1.5px] uppercase text-slate-400 mt-0.5">
-              MyBookins
+              MyBookIns
             </div>
           )}
         </div>

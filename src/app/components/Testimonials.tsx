@@ -10,7 +10,7 @@ interface Review {
 const reviews: Review[] = [
   {
     quote:
-      "The most precise booking system I've ever encountered. Managing 12 locations across London used to be a nightmare until I found Sovereign Architect.",
+      "The most precise booking system I've ever encountered. Managing 12 locations across London used to be a nightmare until I found MyBookIns.",
     author: "Marcus T.",
     role: "Enterprise Owner",
     image: "https://api.builder.io/api/v1/image/assets/TEMP/b1300631cb29f01d963d09791de71f8683dafad9?width=80",

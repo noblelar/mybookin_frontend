@@ -13,7 +13,7 @@ export default function AdminStatusBar() {
         </span>
       </div>
       <span className="text-[10px] text-slate-400 font-medium whitespace-nowrap">
-        <span className="hidden sm:inline">© 2024 </span>MyBookins
+        <span className="hidden sm:inline">© 2024 </span>MyBookIns
       </span>
     </footer>
   )

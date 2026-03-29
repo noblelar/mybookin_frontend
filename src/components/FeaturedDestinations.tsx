@@ -65,7 +65,7 @@ export default function FeaturedDestinations() {
               className="font-inter font-normal text-sm md:text-base"
               style={{ color: '#45464D', maxWidth: '448px' }}
             >
-              The most sought-after experts across the MyBookins network,
+              The most sought-after experts across the MyBookIns network,
               vetted for quality and consistency.
             </p>
           </div>

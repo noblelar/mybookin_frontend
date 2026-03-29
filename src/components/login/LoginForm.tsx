@@ -134,7 +134,7 @@ export default function LoginForm() {
 
       {/* Sign Up Link */}
       <p className="font-inter text-sm font-normal text-[#64748B] text-center">
-        New to MyBookins?{' '}
+        New to MyBookIns?{' '}
         <a
           href="/register"
           className="font-bold text-[#0B1C30] hover:underline"

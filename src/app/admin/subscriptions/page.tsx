@@ -3,7 +3,7 @@ import EcosystemDistribution from '@/components/admin/subscriptions/EcosystemDis
 import InvoiceLedger from '@/components/admin/subscriptions/InvoiceLedger'
 
 export const metadata = {
-  title: 'Subscriptions | MyBookins Admin',
+  title: 'Subscriptions | MyBookIns Admin',
 }
 
 export default function SubscriptionsPage() {

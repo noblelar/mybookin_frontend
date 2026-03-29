@@ -52,7 +52,7 @@ export default function BusinessSection() {
               className="font-inter font-medium text-sm md:text-lg"
               style={{ color: '#DAE2FD', lineHeight: '1.6' }}
             >
-              The MyBookins platform provides more than just a calendar. It's a
+              The MyBookIns platform provides more than just a calendar. It's a
               full-stack command center for multi-tenant resource management.
             </p>
           </div>

@@ -2,7 +2,7 @@ export default function Navigation() {
   return (
     <nav className="sa-nav">
       <div className="sa-nav-inner">
-        <a href="/" className="sa-nav-logo">MyBookins</a>
+        <a href="/" className="sa-nav-logo">MyBookIns</a>
 
         <ul className="sa-nav-links">
           <li><a href="#" className="sa-nav-link active">Discover</a></li>

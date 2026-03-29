@@ -28,12 +28,12 @@ export default function Footer() {
               className="font-inter font-extrabold uppercase"
               style={{
                 fontSize: '20px',
-                color: '#0F172A',
+                color: '#235AFF',
                 lineHeight: '28px',
                 letterSpacing: '-1px',
               }}
             >
-              MyBookins
+              MyBookIns
             </span>
             <p
               className="font-inter font-medium text-xs"
@@ -150,7 +150,7 @@ export default function Footer() {
             className="font-inter font-medium text-xs"
             style={{ color: '#64748B' }}
           >
-            © 2024 MyBookins. All rights reserved.
+            © 2024 MyBookIns. All rights reserved.
           </p>
         </div>
       </div>

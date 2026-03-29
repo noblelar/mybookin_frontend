@@ -50,7 +50,7 @@ export default function Footer() {
         <div className="sa-footer-grid">
           {/* Brand */}
           <div>
-            <a href="/" className="sa-footer-brand-name">MyBookins</a>
+            <a href="/" className="sa-footer-brand-name">MyBookIns</a>
             <p className="sa-footer-brand-desc">
               The definitive multi-tenant engine for service-based businesses who value precision, density, and professional aesthetics.
             </p>
@@ -78,7 +78,7 @@ export default function Footer() {
 
         <div className="sa-footer-bottom">
           <p className="sa-footer-copyright">
-            &copy; 2024 MyBookins. All Rights Reserved.
+            &copy; 2024 MyBookIns. All Rights Reserved.
           </p>
         </div>
       </div>

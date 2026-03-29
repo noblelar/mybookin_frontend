@@ -12,11 +12,9 @@ export default function Navigation() {
         {/* Logo */}
         <a
           href="/"
-          className="font-inter text-xs md:text-sm font-black tracking-tight text-[#0B1C30] flex-shrink-0 whitespace-nowrap flex items-center gap-1"
+          className="font-inter text-sm md:text-lg font-black tracking-tight text-[#235AFF] flex-shrink-0 whitespace-nowrap"
         >
-          <span>Sovereign Architect</span>
-          <span style={{ color: '#235AFF' }}>with</span>
-          <span>MyBookins</span>
+          MyBookIns
         </a>
 
         {/* Nav Links - Hidden on mobile */}
