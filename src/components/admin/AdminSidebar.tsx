@@ -87,7 +87,7 @@ export default function AdminSidebar({ activePath }: AdminSidebarProps) {
       {/* Logo */}
       <div className="px-4 py-5 border-b border-slate-100">
         <div className="font-black text-[#0B1C30] text-base leading-tight tracking-tight">
-          {collapsed ? 'MB' : 'Precision Admin'}
+          {collapsed ? 'MB' : 'Admin'}
         </div>
         {!collapsed && (
           <div className="text-[9px] font-bold tracking-[1.5px] uppercase text-slate-400 mt-0.5">
