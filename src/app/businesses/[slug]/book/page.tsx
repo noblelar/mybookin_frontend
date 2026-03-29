@@ -132,7 +132,7 @@ export default function BookPage({
       </div>
 
       {/* ── Main layout ──────────────────────────────────────────────────── */}
-      <div className="px-4 md:px-8 pb-8 flex flex-col lg:flex-row gap-6 items-start relative lg:pr-80">
+      <div className="px-4 md:px-8 pb-8 flex flex-col lg:flex-row gap-6 items-start">
 
         {/* ── Left: staff + date + time ───────────────────────────────── */}
         <div className="flex-1 min-w-0 flex flex-col gap-5">
@@ -299,7 +299,7 @@ export default function BookPage({
         </div>
 
         {/* ── Right: Service summary sidebar (desktop) ────────────────── */}
-        <div className="hidden lg:flex absolute right-4 top-0 flex-col gap-4 w-72 xl:w-80">
+        <div className="hidden lg:flex flex-col gap-4 w-72 xl:w-80 flex-shrink-0 h-screen sticky top-0 overflow-y-auto">
 
           {/* Service details */}
           <div className="bg-white border border-slate-200 shadow-sm p-5">
