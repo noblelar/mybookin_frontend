@@ -5,7 +5,7 @@ export default function OnboardingNavbar() {
         {/* Logo */}
         <a
           href="/"
-          className="font-inter text-sm md:text-xl font-black uppercase tracking-[-0.05em] text-[#235AFF]"
+          className="font-inter text-sm md:text-xl font-black uppercase tracking-[-0.05em] text-[#0B1C30]"
         >
           MyBookIns
         </a>

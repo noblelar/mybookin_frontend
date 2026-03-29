@@ -27,7 +27,7 @@ export default function ManageBusinessTopBar({
         </button>
 
         {/* Brand — "MyBookIns" */}
-        <span className="font-black text-[#235AFF] text-sm tracking-tight whitespace-nowrap flex-shrink-0">
+        <span className="font-black text-[#0B1C30] text-sm tracking-tight whitespace-nowrap flex-shrink-0">
           MyBookIns
         </span>
 

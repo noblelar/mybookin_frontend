@@ -12,7 +12,7 @@ export default function Navigation() {
         {/* Logo */}
         <a
           href="/"
-          className="font-inter text-sm md:text-lg font-black tracking-tight text-[#235AFF] flex-shrink-0 whitespace-nowrap"
+          className="font-inter text-sm md:text-lg font-black tracking-tight text-[#0B1C30] flex-shrink-0 whitespace-nowrap"
         >
           MyBookIns
         </a>

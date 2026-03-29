@@ -28,7 +28,7 @@ export default function Footer() {
               className="font-inter font-extrabold uppercase"
               style={{
                 fontSize: '20px',
-                color: '#235AFF',
+                color: '#0B1C30',
                 lineHeight: '28px',
                 letterSpacing: '-1px',
               }}
