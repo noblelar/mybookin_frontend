@@ -75,24 +75,93 @@ const bottomItems = [
 
 interface AdminSidebarProps {
   activePath?: string
+  mobileOpen?: boolean
+  onMobileClose?: () => void
 }
 
-export default function AdminSidebar({ activePath }: AdminSidebarProps) {
+export default function AdminSidebar({ activePath, mobileOpen = false, onMobileClose }: AdminSidebarProps) {
   const [collapsed, setCollapsed] = useState(false)
   const pathname = usePathname()
   const resolvedActivePath = activePath ?? pathname
 
   return (
-    <aside className={`flex flex-col h-screen bg-white border-r border-slate-200 flex-shrink-0 transition-all duration-200 ${collapsed ? 'w-[60px]' : 'w-[200px]'}`}>
-      {/* Logo */}
-      <div className="px-4 py-5 border-b border-slate-100">
-        <div className="font-black text-[#0B1C30] text-base leading-tight tracking-tight">
-          {collapsed ? 'MB' : 'Admin'}
-        </div>
-        {!collapsed && (
-          <div className="text-[9px] font-bold tracking-[1.5px] uppercase text-slate-400 mt-0.5">
-            MyBookins
+    <>
+      {/* Desktop sidebar */}
+      <aside className={`
+        hidden lg:flex flex-col h-screen bg-white border-r border-slate-200 flex-shrink-0 transition-all duration-200
+        ${collapsed ? 'w-[60px]' : 'w-[200px]'}
+      `}>
+        <SidebarContent
+          collapsed={collapsed}
+          setCollapsed={setCollapsed}
+          resolvedActivePath={resolvedActivePath}
+          onClose={undefined}
+        />
+      </aside>
+
+      {/* Mobile drawer */}
+      <aside className={`
+        fixed inset-y-0 left-0 z-40 flex flex-col h-screen w-[240px] bg-white border-r border-slate-200
+        transition-transform duration-300 ease-in-out lg:hidden
+        ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
+      `}>
+        <SidebarContent
+          collapsed={false}
+          setCollapsed={() => {}}
+          resolvedActivePath={resolvedActivePath}
+          onClose={onMobileClose}
+        />
+      </aside>
+    </>
+  )
+}
+
+interface SidebarContentProps {
+  collapsed: boolean
+  setCollapsed: (v: boolean) => void
+  resolvedActivePath: string
+  onClose?: () => void
+}
+
+function SidebarContent({ collapsed, setCollapsed, resolvedActivePath, onClose }: SidebarContentProps) {
+  return (
+    <>
+      {/* Logo row */}
+      <div className="px-4 py-5 border-b border-slate-100 flex items-center justify-between">
+        <div>
+          <div className="font-black text-[#0B1C30] text-base leading-tight tracking-tight">
+            {collapsed ? 'MB' : 'Admin'}
           </div>
+          {!collapsed && (
+            <div className="text-[9px] font-bold tracking-[1.5px] uppercase text-slate-400 mt-0.5">
+              MyBookins
+            </div>
+          )}
+        </div>
+        {/* Desktop collapse toggle */}
+        {onClose === undefined && (
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            className="hidden lg:flex w-6 h-6 items-center justify-center rounded hover:bg-slate-100 text-slate-400 transition-colors"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+              {collapsed
+                ? <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" fill="currentColor"/>
+                : <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" fill="currentColor"/>
+              }
+            </svg>
+          </button>
+        )}
+        {/* Mobile close button */}
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="w-7 h-7 flex items-center justify-center rounded hover:bg-slate-100 text-slate-400 transition-colors"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill="currentColor"/>
+            </svg>
+          </button>
         )}
       </div>
 
@@ -104,6 +173,7 @@ export default function AdminSidebar({ activePath }: AdminSidebarProps) {
             <Link
               key={item.href}
               href={item.href}
+              onClick={onClose}
               className={`flex items-center gap-3 px-2 py-2.5 rounded-md text-sm font-semibold transition-colors relative ${
                 isActive
                   ? 'bg-[#DCE9FF] text-[#0B1C30] before:absolute before:left-0 before:top-1 before:bottom-1 before:w-0.5 before:bg-blue-600 before:rounded-full'
@@ -125,6 +195,7 @@ export default function AdminSidebar({ activePath }: AdminSidebarProps) {
           <Link
             key={item.href}
             href={item.href}
+            onClick={onClose}
             className="flex items-center gap-3 px-2 py-2.5 rounded-md text-sm font-semibold text-slate-400 hover:bg-slate-50 hover:text-slate-700 transition-colors"
           >
             <span className="flex-shrink-0">{item.icon}</span>
@@ -147,6 +218,6 @@ export default function AdminSidebar({ activePath }: AdminSidebarProps) {
           )}
         </div>
       </div>
-    </aside>
+    </>
   )
 }
