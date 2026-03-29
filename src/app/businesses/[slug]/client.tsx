@@ -96,7 +96,7 @@ export default function BusinessDetailsClient({ business, slug }: { business: Bu
                 <div className="text-right flex-shrink-0">
                   <p className="text-2xl font-bold text-slate-900">£{service.price}</p>
                   <Link
-                      href={`/businesses/${slug}/checkout`}
+                      href={`/businesses/${slug}/book?service=${encodeURIComponent(service.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''))}`}
                       className="mt-2 inline-block px-4 py-2 bg-slate-900 text-white rounded-lg font-semibold text-sm hover:bg-slate-800 transition"
                     >
                       Book Now
