@@ -187,7 +187,7 @@ export default async function BusinessDetailsPage({ params }: { params: Promise<
         </div>
 
         {/* Client Component for Interactive Parts */}
-        <BusinessDetailsClient business={business} />
+        <BusinessDetailsClient business={business} slug={slug} />
       </div>
     </div>
   )

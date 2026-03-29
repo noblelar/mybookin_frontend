@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
 import { Star } from 'lucide-react'
 
 interface Service {
@@ -29,7 +30,7 @@ interface Business {
   staff: StaffMember[]
 }
 
-export default function BusinessDetailsClient({ business }: { business: Business }) {
+export default function BusinessDetailsClient({ business, slug }: { business: Business; slug: string }) {
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
 
   // Get unique categories
@@ -94,9 +95,12 @@ export default function BusinessDetailsClient({ business }: { business: Business
                 </div>
                 <div className="text-right flex-shrink-0">
                   <p className="text-2xl font-bold text-slate-900">£{service.price}</p>
-                  <button className="mt-2 px-4 py-2 bg-slate-900 text-white rounded-lg font-semibold text-sm hover:bg-slate-800 transition">
-                    Book Now
-                  </button>
+                  <Link
+                      href={`/businesses/${slug}/checkout`}
+                      className="mt-2 inline-block px-4 py-2 bg-slate-900 text-white rounded-lg font-semibold text-sm hover:bg-slate-800 transition"
+                    >
+                      Book Now
+                    </Link>
                 </div>
               </div>
             </div>
