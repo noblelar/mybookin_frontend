@@ -85,11 +85,12 @@ export default function BookPage({
   const [selectedStaff, setSelectedStaff] = useState<string | null>(null)
   const [selectedDay, setSelectedDay] = useState<number>(0) // index into week
   const [selectedTime, setSelectedTime] = useState<string | null>(null)
+  const [mobileExpanded, setMobileExpanded] = useState<boolean>(false)
 
   const canConfirm = selectedStaff !== null && selectedTime !== null
 
   return (
-    <div className="min-h-screen bg-[#EFF4FF] pb-24 lg:pb-0">
+    <div className="min-h-screen bg-[#EFF4FF]">
 
       {/* ── Breadcrumb ───────────────────────────────────────────────────── */}
       <div className="bg-[#0D1F35] px-4 md:px-8 py-2.5">
@@ -131,7 +132,7 @@ export default function BookPage({
       </div>
 
       {/* ── Main layout ──────────────────────────────────────────────────── */}
-      <div className="px-4 md:px-8 pb-8 flex flex-col lg:flex-row gap-6 items-start">
+      <div className="px-4 md:px-8 pb-8 flex flex-col lg:flex-row gap-6 items-start relative lg:pr-80">
 
         {/* ── Left: staff + date + time ───────────────────────────────── */}
         <div className="flex-1 min-w-0 flex flex-col gap-5">
@@ -298,7 +299,7 @@ export default function BookPage({
         </div>
 
         {/* ── Right: Service summary sidebar (desktop) ────────────────── */}
-        <div className="hidden lg:flex flex-col gap-4 w-72 xl:w-80 flex-shrink-0">
+        <div className="hidden lg:flex absolute right-4 top-0 flex-col gap-4 w-72 xl:w-80">
 
           {/* Service details */}
           <div className="bg-white border border-slate-200 shadow-sm p-5">
@@ -408,35 +409,52 @@ export default function BookPage({
         </div>
       </div>
 
-      {/* ── Mobile sticky bar ─────────────────────────────────────────────── */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#0B1C30] shadow-2xl z-50">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+      {/* ── Mobile sticky bottom panel ────────────────────────────────────── */}
+      <div className="lg:hidden sticky bottom-0 left-0 right-0 bg-[#0B1C30] shadow-2xl z-50">
+        {/* Handle bar / peek area */}
+        <button
+          onClick={() => setMobileExpanded(!mobileExpanded)}
+          className="w-full flex items-center justify-between px-4 py-3 border-b border-white/10 hover:bg-white/5 transition"
+        >
           <div>
             <p className="text-[9px] font-black tracking-widest uppercase text-white/40">
               {service.name}
             </p>
             <p className="text-xl font-extrabold text-white">£{service.price.toFixed(2)}</p>
           </div>
-          <div className="text-right">
-            <p className="text-[9px] font-black tracking-widest uppercase text-white/40">Status</p>
-            <p className={`text-xs font-black uppercase tracking-wide ${canConfirm ? 'text-emerald-400' : 'text-amber-400'}`}>
-              {canConfirm ? 'Ready' : 'Select staff & time'}
-            </p>
+          <div className="flex items-center gap-3">
+            <div className="text-right">
+              <p className="text-[9px] font-black tracking-widest uppercase text-white/40">Status</p>
+              <p className={`text-xs font-black uppercase tracking-wide ${canConfirm ? 'text-emerald-400' : 'text-amber-400'}`}>
+                {canConfirm ? 'Ready' : 'Select staff & time'}
+              </p>
+            </div>
+            <svg
+              className={`w-5 h-5 text-white transition-transform duration-200 ${mobileExpanded ? 'rotate-180' : ''}`}
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
           </div>
-        </div>
-        <div className="px-4 py-3">
-          <Link
-            href={canConfirm ? `/businesses/${slug}/checkout` : '#'}
-            onClick={e => !canConfirm && e.preventDefault()}
-            className={`block w-full text-center py-3 font-black tracking-[0.14em] uppercase text-sm transition
-              ${canConfirm
-                ? 'bg-white text-[#0B1C30] hover:bg-slate-100'
-                : 'bg-white/20 text-white/40 cursor-not-allowed pointer-events-none'
-              }`}
-          >
-            Confirm Booking
-          </Link>
-        </div>
+        </button>
+
+        {/* Expanded content area */}
+        {mobileExpanded && (
+          <div className="px-4 py-3 max-h-80 overflow-y-auto">
+            <Link
+              href={canConfirm ? `/businesses/${slug}/checkout` : '#'}
+              onClick={e => !canConfirm && e.preventDefault()}
+              className={`block w-full text-center py-3 font-black tracking-[0.14em] uppercase text-sm transition
+                ${canConfirm
+                  ? 'bg-white text-[#0B1C30] hover:bg-slate-100'
+                  : 'bg-white/20 text-white/40 cursor-not-allowed pointer-events-none'
+                }`}
+            >
+              Confirm Booking
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   )
