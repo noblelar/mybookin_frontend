@@ -13,7 +13,7 @@ export default function AdminStatusBar() {
         </span>
       </div>
       <span className="text-[10px] text-slate-400 font-medium">
-        © 2024 Precision Admin. Sovereign Infrastructure Systems.
+        © 2024 MyBookins. All rights reserved.
       </span>
     </footer>
   )

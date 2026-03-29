@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 
 const navItems = [
   {
@@ -76,19 +77,21 @@ interface AdminSidebarProps {
   activePath?: string
 }
 
-export default function AdminSidebar({ activePath = '/admin/dashboard' }: AdminSidebarProps) {
+export default function AdminSidebar({ activePath }: AdminSidebarProps) {
   const [collapsed, setCollapsed] = useState(false)
+  const pathname = usePathname()
+  const resolvedActivePath = activePath ?? pathname
 
   return (
     <aside className={`flex flex-col h-screen bg-white border-r border-slate-200 flex-shrink-0 transition-all duration-200 ${collapsed ? 'w-[60px]' : 'w-[200px]'}`}>
       {/* Logo */}
       <div className="px-4 py-5 border-b border-slate-100">
         <div className="font-black text-[#0B1C30] text-base leading-tight tracking-tight">
-          {collapsed ? 'PA' : 'Precision Admin'}
+          {collapsed ? 'MB' : 'Precision Admin'}
         </div>
         {!collapsed && (
           <div className="text-[9px] font-bold tracking-[1.5px] uppercase text-slate-400 mt-0.5">
-            Sovereign Architect
+            MyBookins
           </div>
         )}
       </div>
@@ -96,7 +99,7 @@ export default function AdminSidebar({ activePath = '/admin/dashboard' }: AdminS
       {/* Main Nav */}
       <nav className="flex-1 px-2 py-4 flex flex-col gap-0.5 overflow-y-auto">
         {navItems.map((item) => {
-          const isActive = activePath === item.href
+          const isActive = resolvedActivePath === item.href
           return (
             <Link
               key={item.href}
@@ -139,7 +142,7 @@ export default function AdminSidebar({ activePath = '/admin/dashboard' }: AdminS
           {!collapsed && (
             <div className="flex flex-col min-w-0">
               <span className="text-xs font-bold text-[#0B1C30] truncate">Admin Core</span>
-              <span className="text-[10px] text-slate-400 truncate">v2.4.0-stable</span>
+              <span className="text-[10px] text-slate-400 truncate">Platform Admin</span>
             </div>
           )}
         </div>
