@@ -133,7 +133,7 @@ function SalonCard({ salon }: { salon: typeof SALONS[0] }) {
       {/* Info */}
       <div className="flex flex-col gap-2">
         <div className="flex justify-between items-center">
-          <span className="font-inter font-medium text-[#0B0C15]" style={{ fontSize: '18px' }}>{salon.name}</span>
+          <span className="font-inter font-bold" style={{ fontSize: '18px', color: '#0B1C30' }}>{salon.name}</span>
           <span className="font-inter font-medium text-[#939393] text-sm">{salon.distance}</span>
         </div>
         <div className="flex items-center gap-1">
@@ -198,7 +198,7 @@ function CheckFilter({ label }: { label: string }) {
           </svg>
         )}
       </div>
-      <span className="font-inter font-medium text-[#0B0C15]" style={{ fontSize: '16px' }}>{label}</span>
+      <span className="font-inter font-medium" style={{ fontSize: '16px', color: '#0B1C30' }}>{label}</span>
     </label>
   )
 }
@@ -299,7 +299,7 @@ function FindPageContent() {
                   <Image src={cat.icon} alt={cat.label} width={18} height={18} />
                   <span
                     className="text-sm font-medium whitespace-nowrap"
-                    style={{ color: activeCategory === `${cat.label}-${idx}` ? '#FFF' : '#A0A0A0' }}
+                    style={{ color: activeCategory === `${cat.label}-${idx}` ? '#FFF' : '#0B1C30' }}
                   >
                     {cat.label}
                   </span>
@@ -318,8 +318,8 @@ function FindPageContent() {
 
           {/* Price Range */}
           <div className="bg-white rounded-[10px] p-4 flex flex-col gap-4" style={{ boxShadow: '0 4px 80px 0 rgba(0,0,0,0.08)' }}>
-            <h3 className="font-semibold text-base text-black">Price Range</h3>
-            <div className="flex justify-between text-base font-medium text-black">
+            <h3 className="font-semibold text-base" style={{ color: '#0B1C30' }}>Price Range</h3>
+            <div className="flex justify-between text-base font-medium" style={{ color: '#0B1C30' }}>
               <span>${priceRange[0]}</span>
               <span>${priceRange[1]}</span>
             </div>
@@ -335,7 +335,7 @@ function FindPageContent() {
 
           {/* Location */}
           <div className="bg-white rounded-[10px] p-4 flex flex-col gap-4" style={{ boxShadow: '0 4px 80px 0 rgba(0,0,0,0.08)' }}>
-            <h3 className="font-semibold text-base text-black">Location</h3>
+            <h3 className="font-semibold text-base" style={{ color: '#0B1C30' }}>Location</h3>
             <div className="flex flex-col gap-2">
               <CheckFilter label="Near me" />
               <CheckFilter label="2 km" />
@@ -345,7 +345,7 @@ function FindPageContent() {
 
           {/* Ratings */}
           <div className="bg-white rounded-[10px] p-4 flex flex-col gap-4" style={{ boxShadow: '0 4px 80px 0 rgba(0,0,0,0.08)' }}>
-            <h3 className="font-semibold text-base text-black">Ratings</h3>
+            <h3 className="font-semibold text-base" style={{ color: '#0B1C30' }}>Ratings</h3>
             <div className="flex flex-col gap-3">
               <RatingFilter stars={5} />
               <RatingFilter stars={4} hasUp />
@@ -355,7 +355,7 @@ function FindPageContent() {
 
           {/* Availability */}
           <div className="bg-white rounded-[10px] p-4 flex flex-col gap-4" style={{ boxShadow: '0 4px 80px 0 rgba(0,0,0,0.08)' }}>
-            <h3 className="font-semibold text-base text-black">Availability</h3>
+            <h3 className="font-semibold text-base" style={{ color: '#0B1C30' }}>Availability</h3>
             <div className="flex flex-col gap-2">
               <CheckFilter label="Today" />
               <CheckFilter label="Tomorrow" />
@@ -364,7 +364,7 @@ function FindPageContent() {
 
           {/* Offers */}
           <div className="bg-white rounded-[10px] p-4 flex flex-col gap-4" style={{ boxShadow: '0 4px 80px 0 rgba(0,0,0,0.08)' }}>
-            <h3 className="font-semibold text-base text-black">Offers</h3>
+            <h3 className="font-semibold text-base" style={{ color: '#0B1C30' }}>Offers</h3>
             <div className="flex flex-col gap-2">
               <CheckFilter label="20% off" />
               <CheckFilter label="Morning Deals" />
@@ -377,7 +377,7 @@ function FindPageContent() {
 
           {/* Header row */}
           <div className="flex items-center justify-between">
-            <h2 className="font-semibold text-lg" style={{ color: '#0B0C15' }}>
+            <h2 className="font-bold text-lg" style={{ color: '#0B1C30' }}>
               Nearby Salons
               {searchQuery && (
                 <span className="font-normal text-sm ml-2" style={{ color: '#939393' }}>
@@ -385,7 +385,7 @@ function FindPageContent() {
                 </span>
               )}
             </h2>
-            <button className="flex items-center gap-1 text-sm font-medium" style={{ color: '#235AFF' }}>
+            <button className="flex items-center gap-1 text-sm font-bold uppercase transition-colors hover:opacity-80" style={{ color: '#235AFF', letterSpacing: '0.5px' }}>
               <Image src="https://api.builder.io/api/v1/image/assets/TEMP/cf55f53538d1d50e553ccf21beef0e544c78594c?width=40" alt="map" width={20} height={20} />
               View on Map
             </button>
