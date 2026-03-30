@@ -9,9 +9,14 @@ import {
   useEffect,
   useState,
 } from 'react'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 
-import type { AuthSession, SessionResponse } from '@/types/auth'
+import type { ApiErrorResponse, AuthSession, SessionResponse } from '@/types/auth'
+
+type LogoutResult = {
+  success: boolean
+  message?: string
+}
 
 interface AuthContextType {
   isLoading: boolean
@@ -21,12 +26,14 @@ interface AuthContextType {
   setSession: Dispatch<SetStateAction<AuthSession | null>>
   refreshSession: () => Promise<void>
   clearSession: () => void
+  logout: () => Promise<LogoutResult>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname()
+  const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [session, setSession] = useState<AuthSession | null>(null)
 
@@ -85,6 +92,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(false)
   }
 
+  async function logout() {
+    setIsLoading(true)
+
+    try {
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+      })
+
+      let payload: ApiErrorResponse | null = null
+      try {
+        payload = (await response.json()) as ApiErrorResponse
+      } catch {
+        payload = null
+      }
+
+      if (!response.ok) {
+        setIsLoading(false)
+        return {
+          success: false,
+          message: payload?.message ?? 'We could not sign you out right now.',
+        }
+      }
+
+      setSession(null)
+      router.replace('/login')
+      router.refresh()
+
+      return {
+        success: true,
+        message: payload?.message ?? 'Logged out successfully.',
+      }
+    } catch {
+      setIsLoading(false)
+      return {
+        success: false,
+        message: 'We could not sign you out right now.',
+      }
+    }
+  }
+
   const value: AuthContextType = {
     isLoading,
     setLoading: setIsLoading,
@@ -93,6 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession,
     refreshSession,
     clearSession,
+    logout,
   }
 
   return (

@@ -1,3 +1,5 @@
+import AuthUserMenu from '@/components/auth/AuthUserMenu'
+
 interface AdminTopBarProps {
   onMenuClick?: () => void
 }
@@ -48,19 +50,7 @@ export default function AdminTopBar({ onMenuClick }: AdminTopBarProps) {
         <div className="hidden sm:block w-px h-6 bg-slate-200 mx-1"></div>
 
         {/* User profile */}
-        <div className="flex items-center gap-2 pl-1">
-          <div className="text-right hidden md:block">
-            <div className="text-sm font-bold text-[#0B1C30] leading-tight">Admin Core</div>
-            <div className="text-[10px] text-slate-400 uppercase tracking-wide">Superuser</div>
-          </div>
-          <div className="w-9 h-9 rounded-full bg-slate-300 overflow-hidden flex-shrink-0">
-            <div className="w-full h-full bg-gradient-to-br from-slate-600 to-slate-800 flex items-center justify-center">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="white"/>
-              </svg>
-            </div>
-          </div>
-        </div>
+        <AuthUserMenu showInlineDetails />
       </div>
     </header>
   )

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import AuthUserMenu from '@/components/auth/AuthUserMenu'
 
 interface ManageBusinessTopBarProps {
   activeTab?: 'analytics' | 'reports' | 'audit'
@@ -65,11 +65,12 @@ export default function ManageBusinessTopBar({
             </svg>
             <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-red-500 rounded-full" />
           </button>
-          <button className="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center text-slate-600 hover:bg-slate-300 transition-colors">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="currentColor"/>
-            </svg>
-          </button>
+          <AuthUserMenu
+            wrapperClassName="pl-0"
+            avatarButtonClassName="h-8 w-8 bg-slate-200 text-slate-600 hover:bg-slate-300"
+            avatarInnerClassName="bg-transparent text-[10px] text-slate-600"
+            menuClassName="right-0"
+          />
         </div>
       </div>
     </header>
