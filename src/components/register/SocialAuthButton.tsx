@@ -1,6 +1,7 @@
 interface SocialAuthButtonProps {
   provider: 'google' | 'apple'
   onClick?: () => void
+  disabled?: boolean
 }
 
 const GoogleIcon = () => (
@@ -45,12 +46,19 @@ const AppleIcon = () => (
   </svg>
 )
 
-export default function SocialAuthButton({ provider, onClick }: SocialAuthButtonProps) {
+export default function SocialAuthButton({
+  provider,
+  onClick,
+  disabled = false,
+}: SocialAuthButtonProps) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="flex-1 flex items-center justify-center gap-3 px-6 py-3.5 bg-[#EFF4FF] font-inter text-sm font-bold text-[#0B1C30] uppercase tracking-[0.6px] hover:bg-[#DCE9FF] transition-colors"
+      disabled={disabled}
+      className={`flex-1 flex items-center justify-center gap-3 px-6 py-3.5 bg-[#EFF4FF] font-inter text-sm font-bold text-[#0B1C30] uppercase tracking-[0.6px] transition-colors ${
+        disabled ? 'cursor-not-allowed opacity-60' : 'hover:bg-[#DCE9FF]'
+      }`}
     >
       {provider === 'google' ? <GoogleIcon /> : <AppleIcon />}
       {provider === 'google' ? 'Google' : 'Apple'}

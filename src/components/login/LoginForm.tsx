@@ -1,6 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import Link from 'next/link'
+import { useRouter, useSearchParams } from 'next/navigation'
+import type { FormEvent } from 'react'
+import { useState, useTransition } from 'react'
+
+import AuthErrorAlert from '@/components/auth/AuthErrorAlert'
+import { useAuthContext } from '@/context/AuthContext'
+import type { ApiErrorResponse, AuthActionSuccessResponse } from '@/types/auth'
 
 const GoogleIcon = () => (
   <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -29,12 +36,110 @@ const EyeClosedIcon = () => (
   </svg>
 )
 
+type LoginFieldErrors = {
+  email?: string
+  password?: string
+}
+
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
 export default function LoginForm() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const { setLoading, setSession } = useAuthContext()
+  const [isPending, startTransition] = useTransition()
   const [showPassword, setShowPassword] = useState(false)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [fieldErrors, setFieldErrors] = useState<LoginFieldErrors>({})
+  const [formError, setFormError] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const returnUrl = searchParams.get('returnUrl')
+  const registerHref = returnUrl ? `/register?returnUrl=${encodeURIComponent(returnUrl)}` : '/register'
+
+  const isBusy = isSubmitting || isPending
+
+  const resetErrors = () => {
+    setFieldErrors({})
+    setFormError(null)
+  }
+
+  const validateForm = () => {
+    const nextErrors: LoginFieldErrors = {}
+
+    if (!email.trim()) {
+      nextErrors.email = 'Email address is required.'
+    } else if (!emailPattern.test(email.trim())) {
+      nextErrors.email = 'Enter a valid email address.'
+    }
+
+    if (!password.trim()) {
+      nextErrors.password = 'Password is required.'
+    }
+
+    return nextErrors
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    const nextErrors = validateForm()
+    setFieldErrors(nextErrors)
+
+    if (Object.keys(nextErrors).length > 0) {
+      setFormError('Please review the highlighted fields and try again.')
+      return
+    }
+
+    setIsSubmitting(true)
+    setLoading(true)
+    setFormError(null)
+
+    let keepLoaderVisible = false
+
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: email.trim(),
+          password,
+          returnUrl: returnUrl ?? undefined,
+        }),
+      })
+
+      const payload = (await response.json().catch(() => ({
+        message: 'Unexpected response from the server.',
+      }))) as AuthActionSuccessResponse | ApiErrorResponse
+
+      if (!response.ok) {
+        setFormError(payload.message || 'Unable to sign in right now.')
+        return
+      }
+
+      const result = payload as AuthActionSuccessResponse
+      keepLoaderVisible = true
+      setSession(result.session)
+
+      startTransition(() => {
+        router.replace(result.redirectTo)
+        router.refresh()
+      })
+    } catch (error) {
+      console.error('Login form error:', error)
+      setFormError('Unable to reach the server. Please try again.')
+    } finally {
+      setIsSubmitting(false)
+      if (!keepLoaderVisible) {
+        setLoading(false)
+      }
+    }
+  }
 
   return (
-    <div className="flex flex-col gap-6 w-full">
-      {/* Heading */}
+    <form onSubmit={handleSubmit} className="flex flex-col gap-6 w-full" noValidate>
       <div className="flex flex-col gap-2">
         <h2 className="font-manrope text-3xl font-extrabold text-[#0B1C30] tracking-[-0.5px]">
           Welcome Back
@@ -44,25 +149,27 @@ export default function LoginForm() {
         </p>
       </div>
 
-      {/* Social Auth */}
+      {formError ? <AuthErrorAlert message={formError} /> : null}
+
       <div className="flex flex-col gap-3">
         <button
           type="button"
-          className="flex items-center justify-center gap-3 w-full py-3 px-4 border border-[rgba(198,198,205,0.50)] font-inter text-sm font-medium text-[#0B1C30] hover:bg-[#F8F9FF] transition-colors"
+          disabled
+          className="flex items-center justify-center gap-3 w-full py-3 px-4 border border-[rgba(198,198,205,0.50)] font-inter text-sm font-medium text-[#0B1C30] opacity-60 cursor-not-allowed"
         >
           <GoogleIcon />
           Continue with Google
         </button>
         <button
           type="button"
-          className="flex items-center justify-center gap-3 w-full py-3 px-4 border border-[rgba(198,198,205,0.50)] font-inter text-sm font-medium text-[#0B1C30] hover:bg-[#F8F9FF] transition-colors"
+          disabled
+          className="flex items-center justify-center gap-3 w-full py-3 px-4 border border-[rgba(198,198,205,0.50)] font-inter text-sm font-medium text-[#0B1C30] opacity-60 cursor-not-allowed"
         >
           <AppleIcon />
           Continue with Apple
         </button>
       </div>
 
-      {/* Divider */}
       <div className="flex items-center gap-4">
         <div className="flex-1 h-px bg-[rgba(198,198,205,0.40)]" />
         <span className="font-inter text-[10px] font-black uppercase tracking-[1.4px] text-[#76777D]">
@@ -71,9 +178,7 @@ export default function LoginForm() {
         <div className="flex-1 h-px bg-[rgba(198,198,205,0.40)]" />
       </div>
 
-      {/* Email + Password */}
       <div className="flex flex-col gap-4">
-        {/* Email */}
         <div className="flex flex-col gap-2">
           <label
             htmlFor="login-email"
@@ -83,13 +188,28 @@ export default function LoginForm() {
           </label>
           <input
             id="login-email"
+            name="email"
             type="email"
+            value={email}
+            onChange={(event) => {
+              setEmail(event.target.value)
+              resetErrors()
+            }}
+            autoComplete="email"
             placeholder="e.g., alex@email.com"
-            className="w-full font-inter text-sm font-medium text-[#0B1C30] placeholder:text-[#A0A3AB] bg-white border border-[rgba(198,198,205,0.40)] px-4 py-3.5 outline-none focus:border-[#0B1C30] transition-colors"
+            aria-invalid={Boolean(fieldErrors.email)}
+            disabled={isBusy}
+            className={`w-full font-inter text-sm font-medium text-[#0B1C30] placeholder:text-[#A0A3AB] bg-white border px-4 py-3.5 outline-none transition-colors ${
+              fieldErrors.email
+                ? 'border-red-300 focus:border-red-500'
+                : 'border-[rgba(198,198,205,0.40)] focus:border-[#0B1C30]'
+            } ${isBusy ? 'cursor-not-allowed opacity-60' : ''}`}
           />
+          {fieldErrors.email ? (
+            <p className="font-inter text-xs font-medium text-red-600">{fieldErrors.email}</p>
+          ) : null}
         </div>
 
-        {/* Password */}
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <label
@@ -98,50 +218,69 @@ export default function LoginForm() {
             >
               Password
             </label>
-            <a
-              href="#"
-              className="font-inter text-xs font-bold text-[#0B1C30] hover:underline"
+            <button
+              type="button"
+              disabled
+              className="font-inter text-xs font-bold text-slate-400 cursor-not-allowed"
             >
               Forgot Password?
-            </a>
+            </button>
           </div>
-          <div className="relative flex items-center border border-[rgba(198,198,205,0.40)] bg-white focus-within:border-[#0B1C30] transition-colors">
+          <div
+            className={`relative flex items-center border bg-white transition-colors ${
+              fieldErrors.password
+                ? 'border-red-300 focus-within:border-red-500'
+                : 'border-[rgba(198,198,205,0.40)] focus-within:border-[#0B1C30]'
+            } ${isBusy ? 'opacity-60' : ''}`}
+          >
             <input
               id="login-password"
+              name="password"
               type={showPassword ? 'text' : 'password'}
-              defaultValue="••••••••"
+              value={password}
+              onChange={(event) => {
+                setPassword(event.target.value)
+                resetErrors()
+              }}
+              autoComplete="current-password"
+              aria-invalid={Boolean(fieldErrors.password)}
+              disabled={isBusy}
               className="flex-1 font-inter text-sm font-medium text-[#0B1C30] placeholder:text-[#A0A3AB] bg-transparent px-4 py-3.5 outline-none pr-12"
             />
             <button
               type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 text-[#76777D] hover:text-[#0B1C30] transition-colors"
+              onClick={() => setShowPassword((current) => !current)}
+              disabled={isBusy}
+              className={`absolute right-4 text-[#76777D] transition-colors ${
+                isBusy ? 'cursor-not-allowed' : 'hover:text-[#0B1C30]'
+              }`}
               aria-label={showPassword ? 'Hide password' : 'Show password'}
             >
               {showPassword ? <EyeOpenIcon /> : <EyeClosedIcon />}
             </button>
           </div>
+          {fieldErrors.password ? (
+            <p className="font-inter text-xs font-medium text-red-600">{fieldErrors.password}</p>
+          ) : null}
         </div>
       </div>
 
-      {/* Sign In CTA */}
       <button
         type="submit"
-        className="w-full font-inter text-sm font-black uppercase tracking-[1.4px] text-white bg-black py-4 hover:bg-gray-900 transition-colors shadow-lg"
+        disabled={isBusy}
+        className={`w-full font-inter text-sm font-black uppercase tracking-[1.4px] text-white py-4 transition-colors shadow-lg ${
+          isBusy ? 'cursor-not-allowed bg-slate-500' : 'bg-black hover:bg-gray-900'
+        }`}
       >
-        Sign In
+        {isBusy ? 'Signing In...' : 'Sign In'}
       </button>
 
-      {/* Sign Up Link */}
       <p className="font-inter text-sm font-normal text-[#64748B] text-center">
         New to MyBookIns?{' '}
-        <a
-          href="/register"
-          className="font-bold text-[#0B1C30] hover:underline"
-        >
+        <Link href={registerHref} className="font-bold text-[#0B1C30] hover:underline">
           Sign Up
-        </a>
+        </Link>
       </p>
-    </div>
+    </form>
   )
 }

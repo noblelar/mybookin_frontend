@@ -1,17 +1,32 @@
 'use client'
 
+import type { ChangeEventHandler } from 'react'
 import { useState } from 'react'
 
 interface PasswordInputProps {
   label: string
   placeholder?: string
   id: string
+  name?: string
+  value?: string
+  onChange?: ChangeEventHandler<HTMLInputElement>
+  autoComplete?: string
+  required?: boolean
+  error?: string
+  disabled?: boolean
 }
 
 export default function PasswordInput({
   label,
   placeholder,
   id,
+  name,
+  value,
+  onChange,
+  autoComplete,
+  required = false,
+  error,
+  disabled = false,
 }: PasswordInputProps) {
   const [visible, setVisible] = useState(false)
 
@@ -26,14 +41,24 @@ export default function PasswordInput({
       <div className="relative flex items-center w-full border border-[rgba(198,198,205,0.40)] bg-white focus-within:border-[#0B1C30] transition-colors">
         <input
           id={id}
+          name={name ?? id}
           type={visible ? 'text' : 'password'}
           placeholder={placeholder}
+          value={value}
+          onChange={onChange}
+          autoComplete={autoComplete}
+          required={required}
+          disabled={disabled}
+          aria-invalid={Boolean(error)}
           className="flex-1 font-inter text-sm font-medium text-[#0B1C30] placeholder:text-[#A0A3AB] bg-transparent px-4 py-3.5 outline-none pr-12"
         />
         <button
           type="button"
           onClick={() => setVisible(!visible)}
-          className="absolute right-4 text-[#76777D] hover:text-[#0B1C30] transition-colors"
+          disabled={disabled}
+          className={`absolute right-4 text-[#76777D] transition-colors ${
+            disabled ? 'cursor-not-allowed opacity-60' : 'hover:text-[#0B1C30]'
+          }`}
           aria-label={visible ? 'Hide password' : 'Show password'}
         >
           {visible ? (
@@ -65,6 +90,9 @@ export default function PasswordInput({
           )}
         </button>
       </div>
+      {error ? (
+        <p className="font-inter text-xs font-medium text-red-600">{error}</p>
+      ) : null}
     </div>
   )
 }
