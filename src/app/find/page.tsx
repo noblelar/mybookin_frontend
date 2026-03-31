@@ -1,9 +1,12 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
+import { useState, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
+
+import CustomerAuthActions from '@/components/customer/CustomerAuthActions'
+import MobileTabBar from '@/components/discovery/MobileTabBar'
 
 // ── Static data ────────────────────────────────────────────────────────────
 const CATEGORIES = [
@@ -83,19 +86,6 @@ function StarIcon({ filled = true }: { filled?: boolean }) {
         stroke={filled ? 'none' : '#FFD33C'}
         strokeLinecap="round"
         strokeLinejoin="round"
-      />
-    </svg>
-  )
-}
-
-function HeartIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path
-        d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-        stroke="white"
-        strokeWidth="1.5"
-        fill="none"
       />
     </svg>
   )
@@ -205,7 +195,6 @@ function CheckFilter({ label }: { label: string }) {
 
 function FindPageContent() {
   const searchParams = useSearchParams()
-  const router = useRouter()
 
   const initialQuery = searchParams.get('q') ?? ''
   const initialCategory = searchParams.get('category') ?? CATEGORIES[0].label
@@ -215,7 +204,7 @@ function FindPageContent() {
   const [priceRange, setPriceRange] = useState([5, 500])
 
   return (
-    <div className="min-h-screen bg-white font-inter">
+    <div className="min-h-screen bg-white font-inter pb-16 md:pb-0">
 
       {/* ── Top Navbar ─────────────────────────────────────────────────────── */}
       <header className="bg-white w-full" style={{ boxShadow: '0 4px 80px 0 rgba(0,0,0,0.08)' }}>
@@ -248,23 +237,9 @@ function FindPageContent() {
             />
           </div>
 
-          {/* Right: notification + language */}
-          <div className="flex items-center gap-4">
-            <div className="relative w-10 h-10 border border-[#F5F5F5] rounded-[10px] flex items-center justify-center">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M12 6.44V9.77" stroke="#0B0C15" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round"/>
-                <path d="M12.02 2C8.34 2 5.36 4.98 5.36 8.66V10.76C5.36 11.44 5.08 12.46 4.73 13.04L3.46 15.16C2.68 16.47 3.22 17.93 4.66 18.41C9.44 20 14.61 20 19.39 18.41C20.74 17.96 21.32 16.38 20.59 15.16L19.32 13.04C18.97 12.46 18.69 11.43 18.69 10.76V8.66C18.68 5 15.68 2 12.02 2Z" stroke="#0B0C15" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round"/>
-                <path d="M15.33 18.82C15.33 20.65 13.83 22.15 12 22.15C11.09 22.15 10.25 21.77 9.65 21.17C9.05 20.57 8.67 19.73 8.67 18.82" stroke="#0B0C15" strokeWidth="1.5" strokeMiterlimit="10"/>
-              </svg>
-              <span className="absolute top-1 right-1 w-2 h-2 rounded-full" style={{ background: '#E74C3C' }}></span>
-            </div>
-            <div className="hidden md:flex items-center gap-2">
-              <Image src="https://api.builder.io/api/v1/image/assets/TEMP/592975f958aa1447fa701fff6b8a098cebbc795a?width=48" alt="flag" width={24} height={24} />
-              <span className="font-medium text-base" style={{ color: '#122B49' }}>EN</span>
-              <svg width="14" height="8" viewBox="0 0 14 8" fill="none">
-                <path d="M6.29399 7.706C6.68448 8.09651 7.31864 8.09651 7.70914 7.706L13.7071 1.708C14.0976 1.317 14.0976 0.683 13.7071 0.293C13.3166-0.098 12.6825-0.098 12.292 0.293L7 5.585L1.708 0.296C1.318-0.094 0.683-0.094 0.293 0.296C-0.098 0.687-0.098 1.321 0.293 1.711L6.294 7.706H6.29399Z" fill="#122B49"/>
-              </svg>
-            </div>
+          {/* Right: session-aware account controls */}
+          <div className="flex items-center gap-3">
+            <CustomerAuthActions />
           </div>
         </div>
       </header>
@@ -286,9 +261,6 @@ function FindPageContent() {
           {/* Category Pills */}
           <div className="flex items-center gap-3 overflow-x-auto pb-1 flex-1 scrollbar-hide">
             {CATEGORIES.map((cat, idx) => {
-              const isActive = activeCategory === cat.label && idx === CATEGORIES.findIndex(c => c.label === cat.label && activeCategory === c.label)
-                || (activeCategory === cat.label && CATEGORIES.findIndex(c => c.label === cat.label) === idx)
-              const active = activeCategory === `${cat.label}-${idx}`
               return (
                 <button
                   key={`${cat.label}-${idx}`}
@@ -401,6 +373,7 @@ function FindPageContent() {
           </div>
         </div>
       </div>
+      <MobileTabBar />
     </div>
   )
 }

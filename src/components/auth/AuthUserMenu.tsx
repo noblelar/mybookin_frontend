@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { LogOut } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
@@ -87,6 +88,10 @@ export default function AuthUserMenu({
   const roleLabel = getPrimaryRoleLabel(session?.user.roles)
   const initials = getInitials(displayName)
   const isOpen = openPathname === pathname
+  const hasOwnerRole =
+    session?.user.roles.some((role) => role.toUpperCase() === 'BUSINESS_OWNER') ?? false
+  const businessHref = hasOwnerRole ? '/manage_business' : '/start-business'
+  const businessLabel = hasOwnerRole ? 'Manage business' : 'List your business'
 
   useEffect(() => {
     if (!isOpen) return
@@ -183,6 +188,18 @@ export default function AuthUserMenu({
               <AlertDescription className="text-xs">{errorMessage}</AlertDescription>
             </Alert>
           )}
+
+          <Link
+            href={businessHref}
+            role="menuitem"
+            onClick={() => setOpenPathname(null)}
+            className="mt-3 flex w-full items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-left text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+          >
+            <span>{businessLabel}</span>
+            <span className="text-xs uppercase tracking-[0.18em] text-slate-400">
+              {hasOwnerRole ? 'Owner' : 'Upgrade'}
+            </span>
+          </Link>
 
           <button
             type="button"

@@ -4,6 +4,8 @@ import { useState, use } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 
+import CustomerTopBar from '@/components/customer/CustomerTopBar'
+
 // ── Static data ────────────────────────────────────────────────────────────
 const STAFF = [
   {
@@ -91,6 +93,7 @@ export default function BookPage({
 
   return (
     <div className="min-h-screen bg-[#EFF4FF]">
+      <CustomerTopBar />
 
       {/* ── Breadcrumb ───────────────────────────────────────────────────── */}
       <div className="bg-[#0D1F35] px-4 md:px-8 py-2.5">

@@ -24,6 +24,24 @@ export const routeAccessMap: AccessMap[] = [
     allowedRoles: ['BUSINESS_OWNER'],
     extractAccessToken: true,
   },
+  {
+    prefix: '/start-business',
+    cookieName: AUTH_COOKIE_NAME,
+    allowedRoles: ['CUSTOMER', 'BUSINESS_OWNER'],
+    extractAccessToken: true,
+  },
+  {
+    prefix: '/bookings',
+    cookieName: AUTH_COOKIE_NAME,
+    allowedRoles: ['CUSTOMER'],
+    extractAccessToken: true,
+  },
+  {
+    prefix: '/profile',
+    cookieName: AUTH_COOKIE_NAME,
+    allowedRoles: ['CUSTOMER'],
+    extractAccessToken: true,
+  },
 ]
 
 export const GUEST_ONLY_PATHS = new Set<string>(['/login', '/register'])

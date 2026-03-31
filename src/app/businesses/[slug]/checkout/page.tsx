@@ -5,6 +5,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { use } from 'react'
 
+import CustomerTopBar from '@/components/customer/CustomerTopBar'
+
 const serviceData: Record<string, {
   name: string
   tier: string
@@ -68,6 +70,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ slug: strin
 
   return (
     <div className="min-h-screen bg-[#EFF4FF]">
+      <CustomerTopBar />
       <div className="max-w-5xl mx-auto px-4 py-10 md:py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-start">
 

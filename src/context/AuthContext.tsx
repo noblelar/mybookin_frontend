@@ -19,6 +19,7 @@ type LogoutResult = {
 }
 
 interface AuthContextType {
+  hasHydrated: boolean
   isLoading: boolean
   setLoading: Dispatch<SetStateAction<boolean>>
   isAuthenticated: boolean
@@ -34,6 +35,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
+  const [hasHydrated, setHasHydrated] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [session, setSession] = useState<AuthSession | null>(null)
 
@@ -54,10 +56,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const payload = (await response.json()) as SessionResponse
         if (!cancelled) {
           setSession(payload.authenticated ? payload.session : null)
+          setHasHydrated(true)
         }
       } catch {
         if (!cancelled) {
           setSession(null)
+          setHasHydrated(true)
         }
       }
     }
@@ -133,6 +137,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const value: AuthContextType = {
+    hasHydrated,
     isLoading,
     setLoading: setIsLoading,
     isAuthenticated: Boolean(session),

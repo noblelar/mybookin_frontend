@@ -1,5 +1,8 @@
 import Image from 'next/image'
 import { MapPin, Clock, Star, Phone } from 'lucide-react'
+
+import CustomerTopBar from '@/components/customer/CustomerTopBar'
+import MobileTabBar from '@/components/discovery/MobileTabBar'
 import BusinessDetailsClient from './client'
 
 // Sample business data - in a real app, this would come from an API based on slug
@@ -96,7 +99,9 @@ export default async function BusinessDetailsPage({ params }: { params: Promise<
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 pb-16 md:pb-0">
+      <CustomerTopBar />
+
       {/* Hero Section */}
       <div className="relative h-96 bg-slate-200 overflow-hidden">
         <Image
@@ -189,6 +194,8 @@ export default async function BusinessDetailsPage({ params }: { params: Promise<
         {/* Client Component for Interactive Parts */}
         <BusinessDetailsClient business={business} slug={slug} />
       </div>
+
+      <MobileTabBar />
     </div>
   )
 }

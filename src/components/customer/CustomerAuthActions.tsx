@@ -1,0 +1,80 @@
+'use client'
+
+import Link from 'next/link'
+import { usePathname, useSearchParams } from 'next/navigation'
+
+import AuthUserMenu from '@/components/auth/AuthUserMenu'
+import { useAuthContext } from '@/context/AuthContext'
+
+const BellButton = () => (
+  <button className="hidden md:flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-slate-100">
+    <svg width="18" height="20" viewBox="0 0 18 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 17V15H2V8C2 6.61667 2.41667 5.3875 3.25 4.3125C4.08333 3.2375 5.16667 2.53333 6.5 2.2V1.5C6.5 1.08333 6.64583 0.729167 6.9375 0.4375C7.22917 0.145833 7.58333 0 8 0C8.41667 0 8.77083 0.145833 9.0625 0.4375C9.35417 0.729167 9.5 1.08333 9.5 1.5V2.2C10.8333 2.53333 11.9167 3.2375 12.75 4.3125C13.5833 5.3875 14 6.61667 14 8V15H16V17H0ZM8 20C7.45 20 6.97917 19.8042 6.5875 19.4125C6.19583 19.0208 6 18.55 6 18H10C10 18.55 9.80417 19.0208 9.4125 19.4125C9.02083 19.8042 8.55 20 8 20ZM4 15H12V8C12 6.9 11.6083 5.95833 10.825 5.175C10.0417 4.39167 9.1 4 8 4C6.9 4 5.95833 4.39167 5.175 5.175C4.39167 5.95833 4 6.9 4 8V15Z" fill="#64748B"/>
+    </svg>
+  </button>
+)
+
+export default function CustomerAuthActions() {
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const { hasHydrated, isAuthenticated, session } = useAuthContext()
+  const hasOwnerRole =
+    session?.user.roles.some((role) => role.toUpperCase() === 'BUSINESS_OWNER') ?? false
+
+  const queryString = searchParams.toString()
+  const returnUrl = queryString ? `${pathname}?${queryString}` : pathname
+  const loginHref = `/login?returnUrl=${encodeURIComponent(returnUrl)}`
+  const registerHref = `/register?returnUrl=${encodeURIComponent(returnUrl)}`
+
+  if (!hasHydrated) {
+    return (
+      <div className="flex items-center gap-2">
+        <div className="h-9 w-20 animate-pulse rounded-full bg-slate-100" />
+        <div className="hidden h-9 w-24 animate-pulse rounded-full bg-slate-100 sm:block" />
+      </div>
+    )
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="flex items-center gap-2">
+        <Link
+          href="/start-business"
+          className="hidden h-9 items-center justify-center rounded-full border border-slate-200 px-4 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 lg:inline-flex"
+        >
+          For businesses
+        </Link>
+        <Link
+          href={loginHref}
+          className="inline-flex h-9 items-center justify-center rounded-full border border-slate-200 px-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+        >
+          Sign in
+        </Link>
+        <Link
+          href={registerHref}
+          className="hidden h-9 items-center justify-center rounded-full bg-[#0B1C30] px-4 text-sm font-semibold text-white transition-colors hover:bg-slate-800 sm:inline-flex"
+        >
+          Create account
+        </Link>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex items-center gap-2 flex-shrink-0">
+      <Link
+        href={hasOwnerRole ? '/manage_business' : '/start-business'}
+        className="hidden h-9 items-center justify-center rounded-full border border-slate-200 px-4 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 lg:inline-flex"
+      >
+        {hasOwnerRole ? 'Manage business' : 'List your business'}
+      </Link>
+      <BellButton />
+      <AuthUserMenu
+        wrapperClassName="pl-0"
+        avatarButtonClassName="h-9 w-9 bg-slate-700"
+        avatarInnerClassName="bg-transparent text-xs text-white"
+        menuClassName="right-0"
+      />
+    </div>
+  )
+}

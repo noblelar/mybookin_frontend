@@ -118,5 +118,13 @@ const hasRouteAccess = (bucket: AccessMap, roles: readonly string[]) => {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/manage_business/:path*', '/login', '/register'],
+  matcher: [
+    '/admin/:path*',
+    '/manage_business/:path*',
+    '/start-business/:path*',
+    '/bookings/:path*',
+    '/profile/:path*',
+    '/login',
+    '/register',
+  ],
 }

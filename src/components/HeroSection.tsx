@@ -1,7 +1,10 @@
 'use client'
 
+import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+
+import { useAuthContext } from '@/context/AuthContext'
 
 const HERO_CATEGORIES = [
   'Barber', 'Hair', 'Nails', 'Restaurant', 'Tutor', 'Spa', 'Fitness',
@@ -9,6 +12,7 @@ const HERO_CATEGORIES = [
 ]
 
 export default function HeroSection() {
+  const { hasHydrated, isAuthenticated } = useAuthContext()
   const [isMobile, setIsMobile] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('')
@@ -233,6 +237,48 @@ export default function HeroSection() {
               <span className="hidden md:inline">Search Nearby</span>
               <span className="md:hidden">Search</span>
             </button>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            {!hasHydrated ? (
+              <div className="h-5 w-64 animate-pulse rounded-full bg-slate-200" />
+            ) : isAuthenticated ? (
+              <>
+                <span className="font-inter text-sm font-medium text-[#5C5E68]">
+                  You&apos;re signed in and ready to continue.
+                </span>
+                <Link
+                  href="/discover"
+                  className="font-inter text-sm font-bold text-[#0B1C30] underline-offset-4 transition hover:underline"
+                >
+                  Continue to Discover
+                </Link>
+                <Link
+                  href="/bookings"
+                  className="font-inter text-sm font-bold text-[#235AFF] underline-offset-4 transition hover:underline"
+                >
+                  View Bookings
+                </Link>
+              </>
+            ) : (
+              <p className="font-inter text-sm font-medium text-[#5C5E68]">
+                Already have an account?{' '}
+                <Link
+                  href="/login"
+                  className="font-bold text-[#0B1C30] underline-offset-4 transition hover:underline"
+                >
+                  Sign in
+                </Link>{' '}
+                or{' '}
+                <Link
+                  href="/register"
+                  className="font-bold text-[#235AFF] underline-offset-4 transition hover:underline"
+                >
+                  create one
+                </Link>{' '}
+                to manage bookings faster.
+              </p>
+            )}
           </div>
         </div>
 
