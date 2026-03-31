@@ -1,4 +1,4 @@
-export type AuthRole = 'ADMIN' | 'BUSINESS_OWNER' | 'CUSTOMER' | string
+export type AuthRole = 'SUPER_ADMIN' | 'ADMIN' | 'BUSINESS_OWNER' | 'CUSTOMER' | string
 
 export interface BackendUserProfileResponse {
   user_id: string

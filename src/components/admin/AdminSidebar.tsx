@@ -4,6 +4,8 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
+import { useAuthContext } from '@/context/AuthContext'
+
 const navItems = [
   {
     label: 'Dashboard',
@@ -82,7 +84,16 @@ interface AdminSidebarProps {
 export default function AdminSidebar({ activePath, mobileOpen = false, onMobileClose }: AdminSidebarProps) {
   const [collapsed, setCollapsed] = useState(false)
   const pathname = usePathname()
+  const { session } = useAuthContext()
   const resolvedActivePath = activePath ?? pathname
+  const roles = session?.user.roles.map((role) => role.toUpperCase()) ?? []
+  const isSuperAdmin = roles.includes('SUPER_ADMIN')
+  const displayName =
+    `${session?.user.firstName ?? ''} ${session?.user.lastName ?? ''}`.trim() ||
+    session?.user.email ||
+    'Admin Core'
+  const subtitle = isSuperAdmin ? 'Platform Super Admin' : 'Platform Admin'
+  const visibleNavItems = navItems.filter((item) => item.href !== '/admin/users' || isSuperAdmin)
 
   return (
     <>
@@ -95,6 +106,9 @@ export default function AdminSidebar({ activePath, mobileOpen = false, onMobileC
           collapsed={collapsed}
           setCollapsed={setCollapsed}
           resolvedActivePath={resolvedActivePath}
+          visibleNavItems={visibleNavItems}
+          displayName={displayName}
+          subtitle={subtitle}
           onClose={undefined}
         />
       </aside>
@@ -109,6 +123,9 @@ export default function AdminSidebar({ activePath, mobileOpen = false, onMobileC
           collapsed={false}
           setCollapsed={() => {}}
           resolvedActivePath={resolvedActivePath}
+          visibleNavItems={visibleNavItems}
+          displayName={displayName}
+          subtitle={subtitle}
           onClose={onMobileClose}
         />
       </aside>
@@ -120,10 +137,21 @@ interface SidebarContentProps {
   collapsed: boolean
   setCollapsed: (v: boolean) => void
   resolvedActivePath: string
+  visibleNavItems: typeof navItems
+  displayName: string
+  subtitle: string
   onClose?: () => void
 }
 
-function SidebarContent({ collapsed, setCollapsed, resolvedActivePath, onClose }: SidebarContentProps) {
+function SidebarContent({
+  collapsed,
+  setCollapsed,
+  resolvedActivePath,
+  visibleNavItems,
+  displayName,
+  subtitle,
+  onClose,
+}: SidebarContentProps) {
   return (
     <>
       {/* Logo row */}
@@ -167,7 +195,7 @@ function SidebarContent({ collapsed, setCollapsed, resolvedActivePath, onClose }
 
       {/* Main Nav */}
       <nav className="flex-1 px-2 py-4 flex flex-col gap-0.5 overflow-y-auto">
-        {navItems.map((item) => {
+        {visibleNavItems.map((item) => {
           const isActive = resolvedActivePath === item.href
           return (
             <Link
@@ -212,8 +240,8 @@ function SidebarContent({ collapsed, setCollapsed, resolvedActivePath, onClose }
           </div>
           {!collapsed && (
             <div className="flex flex-col min-w-0">
-              <span className="text-xs font-bold text-[#0B1C30] truncate">Admin Core</span>
-              <span className="text-[10px] text-slate-400 truncate">Platform Admin</span>
+              <span className="text-xs font-bold text-[#0B1C30] truncate">{displayName}</span>
+              <span className="text-[10px] text-slate-400 truncate">{subtitle}</span>
             </div>
           )}
         </div>

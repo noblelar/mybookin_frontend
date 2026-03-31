@@ -10,10 +10,13 @@ import { useAuthContext } from '@/context/AuthContext'
 import { cn } from '@/lib/utils'
 
 const ROLE_LABELS: Record<string, string> = {
+  SUPER_ADMIN: 'Super Admin',
   ADMIN: 'Administrator',
   BUSINESS_OWNER: 'Business Owner',
   CUSTOMER: 'Customer',
 }
+
+const ROLE_PRIORITY = ['SUPER_ADMIN', 'ADMIN', 'BUSINESS_OWNER', 'CUSTOMER']
 
 interface AuthUserMenuProps {
   showInlineDetails?: boolean
@@ -63,7 +66,9 @@ const getInitials = (displayName: string) => {
 }
 
 const getPrimaryRoleLabel = (roles: readonly string[] | undefined) => {
-  const primaryRole = roles?.[0]?.trim().toUpperCase() ?? ''
+  const normalizedRoles = roles?.map((role) => role.trim().toUpperCase()).filter(Boolean) ?? []
+  const primaryRole =
+    ROLE_PRIORITY.find((role) => normalizedRoles.includes(role)) ?? normalizedRoles[0] ?? ''
   if (!primaryRole) return 'Authenticated User'
 
   return ROLE_LABELS[primaryRole] ?? toTitleCase(primaryRole)

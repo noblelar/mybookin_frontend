@@ -62,6 +62,8 @@ export interface CreateBusinessRequestPayload {
   longitude?: number | null
 }
 
+export interface UpdateBusinessRequestPayload extends CreateBusinessRequestPayload {}
+
 export interface BusinessListResponse {
   businesses: Business[]
 }
@@ -71,4 +73,9 @@ export interface CreateBusinessSuccessResponse {
   business: Business
   session: AuthSession
   redirectTo: string
+}
+
+export interface BusinessUpdateSuccessResponse {
+  message: string
+  business: Business
 }

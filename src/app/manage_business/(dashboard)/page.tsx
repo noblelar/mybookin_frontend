@@ -1,464 +1,582 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
-import ManageBusinessTopBar from '@/components/manage_business/ManageBusinessTopBar'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { useEffect, useMemo, useState } from 'react'
 
-// ── Sidebar nav items ──────────────────────────────────────────────────────
-const NAV_ITEMS = [
-  {
-    label: 'Dashboard',
-    href: '/manage_business',
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-        <rect x="3" y="3" width="7" height="7" rx="1" fill="currentColor" opacity="0.9"/>
-        <rect x="14" y="3" width="7" height="7" rx="1" fill="currentColor" opacity="0.9"/>
-        <rect x="3" y="14" width="7" height="7" rx="1" fill="currentColor" opacity="0.9"/>
-        <rect x="14" y="14" width="7" height="7" rx="1" fill="currentColor" opacity="0.9"/>
-      </svg>
-    ),
-  },
-  {
-    label: 'Payouts',
-    href: '/manage_business/payouts',
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-        <rect x="2" y="6" width="20" height="13" rx="2" stroke="currentColor" strokeWidth="1.5"/>
-        <path d="M2 10h20" stroke="currentColor" strokeWidth="1.5"/>
-        <circle cx="7" cy="15" r="1.5" fill="currentColor"/>
-      </svg>
-    ),
-  },
-  {
-    label: 'Staff',
-    href: '/manage_business/staff',
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-        <circle cx="9" cy="7" r="3.5" stroke="currentColor" strokeWidth="1.5"/>
-        <path d="M3 19c0-3.314 2.686-6 6-6s6 2.686 6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-        <circle cx="17" cy="9" r="2.5" stroke="currentColor" strokeWidth="1.5"/>
-        <path d="M21 19c0-2.21-1.79-4-4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-      </svg>
-    ),
-  },
-  {
-    label: 'Settings',
-    href: '/manage_business/settings',
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-        <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.5"/>
-        <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" stroke="currentColor" strokeWidth="1.5"/>
-      </svg>
-    ),
-  },
-]
+import ManageBusinessShell from '@/components/manage_business/ManageBusinessShell'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import type { ApiErrorResponse } from '@/types/auth'
+import type { Booking, BusinessBookingsResponse } from '@/types/booking'
+import type { Business, BusinessListResponse } from '@/types/business'
 
-// ── Timeline entries ────────────────────────────────────────────────────────
-const TIMELINE = [
-  {
-    time: '09:00 AM',
-    name: 'Alexander Thorne',
-    service: 'Signature Therapy Service',
-    duration: '90 min',
-    assignedTo: 'Sarah Jenkins',
-    status: 'confirmed' as const,
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z" fill="#94a3b8"/>
-      </svg>
-    ),
-  },
-  {
-    time: '11:30 AM',
-    name: 'Elena Rodriguez',
-    service: 'Private Personal Training',
-    duration: '60 min',
-    assignedTo: 'Marcus Chen',
-    status: 'confirmed' as const,
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-        <path d="M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 7.71l1.43 1.43L2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22l1.43-1.43L16.29 22l2.14-2.14 1.43 1.43 1.43-1.43-1.43-1.43L22 16.29l-1.43-1.43z" fill="#94a3b8"/>
-      </svg>
-    ),
-  },
-  {
-    time: '01:15 PM',
-    name: 'Corporate Group (8)',
-    service: 'Exclusive Lounge Access',
-    duration: '4 Hours',
-    assignedTo: 'Concierge Team',
-    status: 'draft' as const,
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l7.59-7.59L21 8l-9 9z" fill="#94a3b8"/>
-      </svg>
-    ),
-  },
-]
+const getApiErrorMessage = (payload: unknown, fallback: string) => {
+  if (
+    typeof payload === 'object' &&
+    payload !== null &&
+    'message' in payload &&
+    typeof payload.message === 'string' &&
+    payload.message.trim().length
+  ) {
+    return payload.message
+  }
 
-export default function ManageBusinessDashboard() {
-  const [activeTab, setActiveTab] = useState<'analytics' | 'reports' | 'audit'>('analytics')
-  const [viewMode, setViewMode] = useState<'comfortable' | 'architect'>('architect')
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const activeNav = '/manage_business'
+  if (
+    typeof payload === 'object' &&
+    payload !== null &&
+    'error' in payload &&
+    typeof payload.error === 'string' &&
+    payload.error.trim().length
+  ) {
+    return payload.error
+  }
+
+  return fallback
+}
+
+const formatCategory = (value: string) => {
+  return value
+    .toLowerCase()
+    .split('_')
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join(' ')
+}
+
+const getBusinessStatusClassName = (status: string) => {
+  switch (status.toUpperCase()) {
+    case 'ACTIVE':
+      return 'border-emerald-200 bg-emerald-50 text-emerald-700'
+    case 'PENDING':
+      return 'border-amber-200 bg-amber-50 text-amber-700'
+    case 'SUSPENDED':
+      return 'border-red-200 bg-red-50 text-red-700'
+    default:
+      return 'border-slate-200 bg-slate-50 text-slate-600'
+  }
+}
+
+const getBookingStatusClassName = (status: string) => {
+  switch (status.toUpperCase()) {
+    case 'CONFIRMED':
+      return 'bg-emerald-50 text-emerald-700'
+    case 'PENDING':
+      return 'bg-amber-50 text-amber-700'
+    case 'CANCELLED':
+      return 'bg-red-50 text-red-700'
+    default:
+      return 'bg-slate-100 text-slate-600'
+  }
+}
+
+const formatBookingDateTime = (value: string, timezone: string) => {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return 'Invalid date'
+
+  try {
+    return new Intl.DateTimeFormat('en-GB', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+      timeZone: timezone,
+    }).format(date)
+  } catch {
+    return date.toLocaleString()
+  }
+}
+
+const getCustomerDisplayName = (booking: Booking) => {
+  const fullName = `${booking.customerFirstName} ${booking.customerLastName}`.trim()
+  return fullName || booking.customerEmail
+}
+
+export default function ManageBusinessDashboardPage() {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const selectedBusinessId = searchParams.get('businessId')
+
+  const [businesses, setBusinesses] = useState<Business[]>([])
+  const [bookings, setBookings] = useState<Booking[]>([])
+  const [isLoadingBusinesses, setIsLoadingBusinesses] = useState(true)
+  const [isLoadingBookings, setIsLoadingBookings] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
+  const updateSelectedBusinessId = (businessId: string) => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('businessId', businessId)
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+  }
+
+  useEffect(() => {
+    let ignore = false
+
+    async function loadBusinesses() {
+      setIsLoadingBusinesses(true)
+
+      try {
+        const response = await fetch('/api/businesses', {
+          method: 'GET',
+          cache: 'no-store',
+        })
+
+        const payload = (await response.json()) as BusinessListResponse | ApiErrorResponse
+        if (ignore) return
+
+        if (!response.ok) {
+          setErrorMessage(getApiErrorMessage(payload, 'We could not load your businesses right now.'))
+          setBusinesses([])
+          return
+        }
+
+        const nextBusinesses = (payload as BusinessListResponse).businesses
+        setBusinesses(nextBusinesses)
+      } catch {
+        if (!ignore) {
+          setErrorMessage('We could not load your businesses right now.')
+          setBusinesses([])
+        }
+      } finally {
+        if (!ignore) {
+          setIsLoadingBusinesses(false)
+        }
+      }
+    }
+
+    void loadBusinesses()
+
+    return () => {
+      ignore = true
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!businesses.length) return
+
+    const hasValidSelectedBusiness = selectedBusinessId
+      ? businesses.some((business) => business.id === selectedBusinessId)
+      : false
+
+    if (!hasValidSelectedBusiness) {
+      const params = new URLSearchParams(searchParams.toString())
+      params.set('businessId', businesses[0].id)
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+    }
+  }, [businesses, pathname, router, searchParams, selectedBusinessId])
+
+  useEffect(() => {
+    if (!selectedBusinessId) {
+      setBookings([])
+      return
+    }
+
+    let ignore = false
+
+    async function loadBookings() {
+      setIsLoadingBookings(true)
+
+      try {
+        const response = await fetch(`/api/businesses/${selectedBusinessId}/bookings`, {
+          method: 'GET',
+          cache: 'no-store',
+        })
+
+        const payload = (await response.json()) as BusinessBookingsResponse | ApiErrorResponse
+        if (ignore) return
+
+        if (!response.ok) {
+          setErrorMessage(getApiErrorMessage(payload, 'We could not load business bookings right now.'))
+          setBookings([])
+          return
+        }
+
+        setBookings((payload as BusinessBookingsResponse).bookings)
+      } catch {
+        if (!ignore) {
+          setErrorMessage('We could not load business bookings right now.')
+          setBookings([])
+        }
+      } finally {
+        if (!ignore) {
+          setIsLoadingBookings(false)
+        }
+      }
+    }
+
+    void loadBookings()
+
+    return () => {
+      ignore = true
+    }
+  }, [selectedBusinessId])
+
+  const selectedBusiness = useMemo(() => {
+    return businesses.find((business) => business.id === selectedBusinessId) ?? businesses[0] ?? null
+  }, [businesses, selectedBusinessId])
+
+  const sortedBookings = useMemo(() => {
+    return [...bookings].sort(
+      (leftValue, rightValue) =>
+        new Date(leftValue.startAt).getTime() - new Date(rightValue.startAt).getTime()
+    )
+  }, [bookings])
+
+  const upcomingBookings = useMemo(() => {
+    const now = Date.now()
+    return sortedBookings.filter((booking) => new Date(booking.endAt).getTime() >= now)
+  }, [sortedBookings])
+
+  const confirmedBookingsCount = useMemo(() => {
+    return bookings.filter((booking) => booking.status.toUpperCase() === 'CONFIRMED').length
+  }, [bookings])
+
+  const pendingBookingsCount = useMemo(() => {
+    return bookings.filter((booking) => booking.status.toUpperCase() === 'PENDING').length
+  }, [bookings])
+
+  const nextBooking = upcomingBookings[0] ?? null
+
+  const setupChecks = selectedBusiness
+    ? [
+        {
+          label: 'Business profile completed',
+          complete: Boolean(
+            selectedBusiness.description &&
+              selectedBusiness.email &&
+              selectedBusiness.phone &&
+              selectedBusiness.addressLine1 &&
+              selectedBusiness.city &&
+              selectedBusiness.postcode
+          ),
+        },
+        {
+          label: 'Timezone configured',
+          complete: Boolean(selectedBusiness.timezone),
+        },
+        {
+          label: 'Business approved for discovery',
+          complete: selectedBusiness.status.toUpperCase() === 'ACTIVE',
+        },
+      ]
+    : []
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#F1F5F9] font-inter">
+    <ManageBusinessShell activeNav="/manage_business">
+      {errorMessage ? (
+        <Alert variant="destructive" className="mb-6 rounded-2xl">
+          <AlertTitle>Owner workspace issue</AlertTitle>
+          <AlertDescription>{errorMessage}</AlertDescription>
+        </Alert>
+      ) : null}
 
-      {/* Mobile overlay */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 z-30 bg-black/40 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* ── Left Sidebar ──────────────────────────────────────────────────── */}
-      <aside className={`
-        fixed inset-y-0 left-0 z-40 lg:relative lg:z-auto
-        flex flex-col w-[148px] bg-white border-r border-slate-200 flex-shrink-0 transition-transform duration-300
-        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-      `}>
-        {/* Brand area */}
-        <div className="px-4 pt-5 pb-4 border-b border-slate-100">
-          <div className="flex items-center gap-2.5 mb-1">
-            <div className="w-8 h-8 bg-[#0B1C30] flex items-center justify-center flex-shrink-0">
-              <span className="text-white font-black text-sm">A</span>
-            </div>
-            <div>
-              <p className="text-[11px] font-black text-[#0B1C30] leading-tight">Sovereign Admin</p>
-              <p className="text-[8px] font-bold tracking-[1.5px] uppercase text-slate-400 mt-0.5">Management Suite</p>
-            </div>
+      {isLoadingBusinesses ? (
+        <div className="grid gap-6">
+          <div className="h-40 animate-pulse rounded-[28px] bg-white" />
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="h-32 animate-pulse rounded-[24px] bg-white" />
+            <div className="h-32 animate-pulse rounded-[24px] bg-white" />
+            <div className="h-32 animate-pulse rounded-[24px] bg-white" />
           </div>
+          <div className="h-96 animate-pulse rounded-[28px] bg-white" />
         </div>
-
-        {/* Nav */}
-        <nav className="flex-1 px-2 py-4 flex flex-col gap-0.5 overflow-y-auto">
-          {NAV_ITEMS.map(item => {
-            const isActive = activeNav === item.href
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center gap-2.5 px-2.5 py-2.5 text-[11px] font-bold transition-colors relative ${
-                  isActive
-                    ? 'bg-[#EFF4FF] text-[#0B1C30]'
-                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
-                }`}
-              >
-                {isActive && (
-                  <span className="absolute left-0 top-1 bottom-1 w-0.5 bg-[#0B1C30] rounded-r" />
-                )}
-                <span className={isActive ? 'text-[#0B1C30]' : 'text-slate-400'}>{item.icon}</span>
-                <span>{item.label}</span>
-              </Link>
-            )
-          })}
-        </nav>
-
-        {/* New Entry CTA */}
-        <div className="p-3 border-t border-slate-100">
-          <button className="w-full flex items-center justify-center gap-2 py-2.5 bg-[#0B1C30] text-white text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-colors">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-              <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" fill="currentColor"/>
-            </svg>
-            New Entry
-          </button>
-        </div>
-      </aside>
-
-      {/* ── Right column ──────────────────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-
-        {/* ── Top Bar ───────────────────────────────────────────────────── */}
-        <ManageBusinessTopBar
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          onMenuClick={() => setSidebarOpen(true)}
-        />
-
-        {/* ── Main scrollable area ───────────────────────────────────────── */}
-        <main className="flex-1 overflow-y-auto">
-          <div className="p-5 md:p-8 flex flex-col gap-5 min-h-full">
-
-            {/* Sub-entity badge + heading + toggle */}
-            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+      ) : !businesses.length ? (
+        <section className="rounded-[32px] border border-slate-200 bg-white p-8 shadow-sm">
+          <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
+            Owner Workspace
+          </p>
+          <h1 className="mt-3 text-3xl font-extrabold tracking-tight text-[#0B1C30]">
+            No businesses found
+          </h1>
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-500">
+            Create your first business entry to unlock the dashboard, settings, staff setup, and
+            live booking visibility.
+          </p>
+          <Link
+            href="/start-business"
+            className="mt-6 inline-flex h-11 items-center justify-center rounded-full bg-[#0B1C30] px-5 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
+          >
+            Start owner onboarding
+          </Link>
+        </section>
+      ) : (
+        <div className="flex flex-col gap-6">
+          <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+            <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
               <div>
-                <div className="inline-flex bg-[#0B1C30] px-3 py-1 mb-3">
-                  <span className="text-[9px] font-black tracking-[0.14em] uppercase text-teal-300">
-                    Sub-Entity: Meridian Luxury Suites
-                  </span>
-                </div>
-                <h1 className="font-manrope text-3xl md:text-4xl font-extrabold text-[#0B1C30] tracking-tight leading-none">
+                <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
                   Operational Overview
+                </p>
+                <h1 className="mt-3 text-3xl font-extrabold tracking-tight text-[#0B1C30] md:text-4xl">
+                  {selectedBusiness?.name}
                 </h1>
+                <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-500">
+                  Manage the business profile, watch booking activity, and use the setup checklist to
+                  move this entity from owner onboarding into a fully operational workspace.
+                </p>
               </div>
 
-              {/* View toggle */}
-              <div className="flex border border-slate-300 overflow-hidden flex-shrink-0 self-start">
-                <button
-                  onClick={() => setViewMode('comfortable')}
-                  className={`px-4 py-2 text-[9px] font-black tracking-widest uppercase transition-colors ${
-                    viewMode === 'comfortable'
-                      ? 'bg-[#0B1C30] text-white'
-                      : 'bg-white text-slate-500 hover:text-slate-800'
-                  }`}
-                >
-                  Comfortable
-                </button>
-                <button
-                  onClick={() => setViewMode('architect')}
-                  className={`px-4 py-2 text-[9px] font-black tracking-widest uppercase border-l border-slate-300 transition-colors ${
-                    viewMode === 'architect'
-                      ? 'bg-[#0B1C30] text-white'
-                      : 'bg-white text-slate-500 hover:text-slate-800'
-                  }`}
-                >
-                  Architect
-                </button>
+              <div className="grid gap-3 sm:min-w-[280px]">
+                <label className="grid gap-2 text-sm font-medium text-slate-700">
+                  Active business
+                  <select
+                    value={selectedBusiness?.id ?? ''}
+                    onChange={(event) => updateSelectedBusinessId(event.target.value)}
+                    className="h-11 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-900 outline-none transition focus:border-[#0B1C30] focus:bg-white"
+                  >
+                    {businesses.map((business) => (
+                      <option key={business.id} value={business.id}>
+                        {business.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                {selectedBusiness ? (
+                  <div className="flex flex-wrap gap-2">
+                    <span
+                      className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${getBusinessStatusClassName(
+                        selectedBusiness.status
+                      )}`}
+                    >
+                      {selectedBusiness.status}
+                    </span>
+                    <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
+                      {formatCategory(selectedBusiness.category)}
+                    </span>
+                    <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
+                      {selectedBusiness.city}, {selectedBusiness.postcode}
+                    </span>
+                  </div>
+                ) : null}
               </div>
             </div>
+          </section>
 
-            {/* ── Two-column layout (main + right panel) ─────────────────── */}
-            <div className="flex flex-col xl:flex-row gap-5 items-start">
+          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <article className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+              <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
+                Managed businesses
+              </p>
+              <p className="mt-3 text-3xl font-extrabold tracking-tight text-[#0B1C30]">
+                {businesses.length}
+              </p>
+              <p className="mt-2 text-sm text-slate-500">Owner entities connected to this account.</p>
+            </article>
 
-              {/* ── Left / main ───────────────────────────────────────────── */}
-              <div className="flex-1 min-w-0 flex flex-col gap-5">
+            <article className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+              <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
+                Total bookings
+              </p>
+              <p className="mt-3 text-3xl font-extrabold tracking-tight text-[#0B1C30]">
+                {bookings.length}
+              </p>
+              <p className="mt-2 text-sm text-slate-500">All live bookings for the selected business.</p>
+            </article>
 
-                {/* Stats row */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-0 border border-slate-200 bg-white overflow-hidden">
-                  {/* Stat 1 — Total Revenue */}
-                  <div className="p-5 border-r border-slate-200">
-                    <p className="text-[9px] font-black tracking-[0.14em] uppercase text-slate-400 mb-3">
-                      Total Revenue<br />(Month)
+            <article className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+              <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
+                Confirmed
+              </p>
+              <p className="mt-3 text-3xl font-extrabold tracking-tight text-[#0B1C30]">
+                {confirmedBookingsCount}
+              </p>
+              <p className="mt-2 text-sm text-slate-500">Confirmed customer commitments.</p>
+            </article>
+
+            <article className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+              <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
+                Pending
+              </p>
+              <p className="mt-3 text-3xl font-extrabold tracking-tight text-[#0B1C30]">
+                {pendingBookingsCount}
+              </p>
+              <p className="mt-2 text-sm text-slate-500">Pending bookings still awaiting action.</p>
+            </article>
+          </section>
+
+          <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+            <div className="grid gap-6">
+              <article className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
+                      Setup checklist
                     </p>
-                    <div className="flex items-baseline gap-2 mb-1">
-                      <span className="text-2xl font-extrabold text-[#0B1C30] tracking-tight">$42,850.00</span>
-                      <span className="text-xs font-bold text-emerald-500">+12.4%</span>
-                    </div>
-                    <div className="w-20 h-0.5 bg-[#0B1C30] mt-3" />
+                    <h2 className="mt-2 text-2xl font-bold tracking-tight text-[#0B1C30]">
+                      Keep this business deployment-ready
+                    </h2>
                   </div>
-
-                  {/* Stat 2 — Pending Bookings */}
-                  <div className="p-5 border-r border-slate-200">
-                    <p className="text-[9px] font-black tracking-[0.14em] uppercase text-slate-400 mb-3">
-                      Pending Bookings
-                    </p>
-                    <div className="flex items-baseline gap-2 mb-1">
-                      <span className="text-2xl font-extrabold text-[#0B1C30] tracking-tight">18</span>
-                      <span className="text-xs font-medium text-slate-500">Requires action</span>
-                    </div>
-                    <div className="flex gap-1 mt-3">
-                      {[1,2,3,4,5].map(i => (
-                        <div key={i} className={`h-1 flex-1 ${i <= 3 ? 'bg-[#0B1C30]' : 'bg-slate-200'}`} />
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Stat 3 — Active Staff */}
-                  <div className="p-5">
-                    <p className="text-[9px] font-black tracking-[0.14em] uppercase text-slate-400 mb-3">
-                      Active Staff
-                    </p>
-                    <div className="flex items-baseline gap-2 mb-1">
-                      <span className="text-2xl font-extrabold text-[#0B1C30] tracking-tight">12</span>
-                      <span className="text-xs font-medium text-slate-500">On-site today</span>
-                    </div>
-                    <div className="flex items-center gap-1 mt-3">
-                      {['#94a3b8', '#64748b', '#475569'].map((c, i) => (
-                        <div
-                          key={i}
-                          className="w-6 h-6 rounded-full border-2 border-white -ml-1 first:ml-0 flex items-center justify-center"
-                          style={{ background: c }}
-                        >
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
-                            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="white"/>
-                          </svg>
-                        </div>
-                      ))}
-                      <span className="text-[9px] font-black text-slate-500 ml-1">+9</span>
-                    </div>
-                  </div>
+                  <Link
+                    href={`/manage_business/settings?businessId=${selectedBusiness?.id ?? ''}`}
+                    className="inline-flex h-10 items-center justify-center rounded-full border border-slate-200 px-4 text-sm font-semibold text-[#0B1C30] transition-colors hover:bg-slate-50"
+                  >
+                    Open settings
+                  </Link>
                 </div>
 
-                {/* Timeline section */}
-                <div className="bg-white border border-slate-200">
-                  {/* Timeline header */}
-                  <div className="px-5 py-4 flex items-center justify-between border-b border-slate-100">
-                    <div className="flex items-center gap-3">
-                      <h2 className="text-[10px] font-black tracking-[0.14em] uppercase text-[#0B1C30]">
-                        Today&apos;s Timeline
-                      </h2>
-                      <span className="text-[10px] font-medium text-slate-400">— October 24, 2023</span>
+                <div className="mt-5 grid gap-3">
+                  {setupChecks.map((item) => (
+                    <div
+                      key={item.label}
+                      className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"
+                    >
+                      <span className="text-sm font-medium text-[#0B1C30]">{item.label}</span>
+                      <span
+                        className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+                          item.complete
+                            ? 'bg-emerald-50 text-emerald-700'
+                            : 'bg-amber-50 text-amber-700'
+                        }`}
+                      >
+                        {item.complete ? 'Complete' : 'Needs attention'}
+                      </span>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-[#0B1C30]" />
-                        <span className="text-[9px] font-black tracking-widest uppercase text-slate-500">Confirmed</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full border border-slate-400" />
-                        <span className="text-[9px] font-black tracking-widest uppercase text-slate-400">Draft</span>
-                      </div>
-                    </div>
+                  ))}
+                </div>
+              </article>
+
+              <article className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
+                      Recent bookings
+                    </p>
+                    <h2 className="mt-2 text-2xl font-bold tracking-tight text-[#0B1C30]">
+                      Live customer activity
+                    </h2>
                   </div>
+                  {isLoadingBookings ? (
+                    <span className="text-xs font-semibold text-slate-400">Loading...</span>
+                  ) : null}
+                </div>
 
-                  {/* Timeline entries */}
-                  <div className="divide-y divide-slate-100">
-                    {TIMELINE.map((entry, idx) => (
-                      <div key={idx} className="flex items-center px-5 py-4 gap-4 hover:bg-slate-50 transition-colors group">
-                        {/* Time */}
-                        <div className="w-[72px] flex-shrink-0">
-                          <span className={`text-[10px] font-black tracking-wide ${
-                            entry.status === 'confirmed' ? 'text-[#0B1C30]' : 'text-slate-400'
-                          }`}>
-                            {entry.time}
-                          </span>
+                {isLoadingBookings ? (
+                  <div className="mt-5 grid gap-3">
+                    {[0, 1, 2].map((key) => (
+                      <div key={key} className="h-20 animate-pulse rounded-2xl bg-slate-100" />
+                    ))}
+                  </div>
+                ) : upcomingBookings.length ? (
+                  <div className="mt-5 grid gap-3">
+                    {upcomingBookings.slice(0, 6).map((booking) => (
+                      <div
+                        key={booking.id}
+                        className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 md:flex-row md:items-center md:justify-between"
+                      >
+                        <div>
+                          <p className="text-sm font-semibold text-[#0B1C30]">
+                            {getCustomerDisplayName(booking)}
+                          </p>
+                          <p className="mt-1 text-sm text-slate-500">
+                            {booking.serviceName} with {booking.assignedStaffDisplayName}
+                          </p>
+                          <p className="mt-1 text-xs text-slate-400">
+                            {formatBookingDateTime(booking.startAt, booking.businessTimezone)}
+                          </p>
                         </div>
-
-                        {/* Entry card */}
-                        <div className={`flex-1 flex items-center gap-3 px-4 py-3 border ${
-                          entry.status === 'confirmed' ? 'border-slate-200' : 'border-dashed border-slate-200'
-                        }`}>
-                          {/* Status bar (confirmed only) */}
-                          {entry.status === 'confirmed' && (
-                            <div className="w-0.5 h-8 bg-[#0B1C30] flex-shrink-0" />
-                          )}
-
-                          {/* Icon */}
-                          <div className="w-8 h-8 bg-[#F1F5F9] flex items-center justify-center flex-shrink-0">
-                            {entry.icon}
-                          </div>
-
-                          {/* Info */}
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-bold text-[#0B1C30] truncate">{entry.name}</p>
-                            <p className="text-[10px] font-medium text-slate-400 truncate">
-                              {entry.service} • {entry.duration}
-                            </p>
-                          </div>
-
-                          {/* Assigned to */}
-                          <div className="text-right flex-shrink-0">
-                            <p className="text-[8px] font-black tracking-widest uppercase text-slate-400">Assigned To</p>
-                            <p className={`text-xs font-bold ${
-                              entry.status === 'confirmed' ? 'text-[#0B1C30]' : 'text-slate-400'
-                            }`}>
-                              {entry.assignedTo}
-                            </p>
-                          </div>
-
-                          {/* Menu */}
-                          <button className="w-6 h-6 flex flex-col items-center justify-center gap-0.5 text-slate-300 hover:text-slate-500 transition-colors flex-shrink-0">
-                            {[0,1,2].map(i => (
-                              <span key={i} className="w-1 h-1 rounded-full bg-current" />
-                            ))}
-                          </button>
+                        <div className="flex items-center gap-3">
+                          <span
+                            className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getBookingStatusClassName(
+                              booking.status
+                            )}`}
+                          >
+                            {booking.status}
+                          </span>
+                          <span className="text-xs font-medium text-slate-500">
+                            Party size {booking.partySize}
+                          </span>
                         </div>
                       </div>
                     ))}
                   </div>
-
-                  {/* Load more */}
-                  <div className="p-4 border-t border-dashed border-slate-200">
-                    <button className="w-full py-3 text-[9px] font-black tracking-[0.16em] uppercase text-slate-500 border border-dashed border-slate-300 hover:border-slate-400 hover:text-slate-700 transition-colors">
-                      Load Full Evening Schedule
-                    </button>
+                ) : (
+                  <div className="mt-5 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-5 text-sm leading-relaxed text-slate-500">
+                    No bookings yet for this business. Once customers start booking services, this
+                    area will become the owner’s live operations feed.
                   </div>
-                </div>
-              </div>
-
-              {/* ── Right Panel ───────────────────────────────────────────── */}
-              <div className="flex flex-col gap-4 w-full xl:w-[220px] flex-shrink-0">
-
-                {/* Quick Actions */}
-                <div className="bg-[#EFF4FF] border border-slate-200 p-4 flex flex-col gap-3">
-                  <p className="text-[9px] font-black tracking-[0.14em] uppercase text-slate-500 mb-1">
-                    Quick Actions
-                  </p>
-
-                  {/* Manual Booking - primary */}
-                  <button className="flex items-center gap-2.5 w-full bg-[#0B1C30] text-white px-3 py-2.5 hover:bg-slate-800 transition-colors text-left">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="flex-shrink-0">
-                      <rect x="3" y="4" width="18" height="18" rx="2" stroke="white" strokeWidth="1.5"/>
-                      <path d="M16 2v4M8 2v4M3 10h18" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
-                      <path d="M12 14v4M10 16h4" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
-                    </svg>
-                    <span className="text-[9px] font-black tracking-widest uppercase">Manual Booking</span>
-                  </button>
-
-                  {/* Mark Time-Off */}
-                  <button className="flex items-center gap-2.5 w-full bg-white border border-slate-200 px-3 py-2.5 hover:bg-slate-50 transition-colors text-left">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="flex-shrink-0">
-                      <rect x="3" y="4" width="18" height="18" rx="2" stroke="#0B1C30" strokeWidth="1.5"/>
-                      <path d="M16 2v4M8 2v4M3 10h18" stroke="#0B1C30" strokeWidth="1.5" strokeLinecap="round"/>
-                      <path d="M9 14l2 2 4-4" stroke="#0B1C30" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                    <span className="text-[9px] font-black tracking-widest uppercase text-[#0B1C30]">Mark Time-Off</span>
-                  </button>
-
-                  {/* Daily Report */}
-                  <button className="flex items-center gap-2.5 w-full bg-white border border-slate-200 px-3 py-2.5 hover:bg-slate-50 transition-colors text-left">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="flex-shrink-0">
-                      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" stroke="#0B1C30" strokeWidth="1.5" strokeLinejoin="round"/>
-                      <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" stroke="#0B1C30" strokeWidth="1.5" strokeLinecap="round"/>
-                    </svg>
-                    <span className="text-[9px] font-black tracking-widest uppercase text-[#0B1C30]">Daily Report</span>
-                  </button>
-                </div>
-
-                {/* Facility Capacity */}
-                <div className="bg-white border border-slate-200 p-4 flex flex-col gap-3">
-                  <p className="text-[9px] font-black tracking-[0.14em] uppercase text-slate-500">
-                    Facility Capacity
-                  </p>
-                  {[
-                    { label: 'Main Hall', value: 84 },
-                    { label: 'Suite B', value: 42 },
-                  ].map(f => (
-                    <div key={f.label} className="flex flex-col gap-1.5">
-                      <div className="flex items-center justify-between">
-                        <button className="flex-1 text-left text-[9px] font-black tracking-widest uppercase bg-[#EFF4FF] text-[#0B1C30] px-2.5 py-2 hover:bg-[#DCE9FF] transition-colors">
-                          {f.label} — {f.value}%
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Property Location */}
-                <div className="bg-white border border-slate-200 overflow-hidden">
-                  {/* Map image placeholder */}
-                  <div className="relative h-28 bg-slate-200 overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-br from-slate-300 to-slate-400 flex items-center justify-center">
-                      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" className="text-slate-500">
-                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="currentColor"/>
-                      </svg>
-                    </div>
-                    <button className="absolute top-2 right-2 w-6 h-6 bg-white/80 flex items-center justify-center hover:bg-white transition-colors">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                        <path d="M14 3h7v7M10 14L21 3M3 21l7-7M3 10V3h7" stroke="#0B1C30" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </button>
-                  </div>
-
-                  <div className="p-3">
-                    <p className="text-[8px] font-black tracking-[0.14em] uppercase text-slate-400 mb-0.5">
-                      Property Location
-                    </p>
-                    <p className="text-xs font-bold text-[#0B1C30]">Downtown Meridian District</p>
-
-                    <div className="flex items-center gap-1.5 mt-2">
-                      <span className="text-[8px] font-black tracking-widest uppercase text-slate-400">Status: Online</span>
-                      <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                    </div>
-                  </div>
-                </div>
-              </div>
+                )}
+              </article>
             </div>
-          </div>
-        </main>
-      </div>
-    </div>
+
+            <div className="grid gap-6">
+              <article className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+                <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
+                  Business snapshot
+                </p>
+                {selectedBusiness ? (
+                  <div className="mt-4 grid gap-3">
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                      <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
+                        Contact
+                      </p>
+                      <p className="mt-2 text-sm font-semibold text-[#0B1C30]">
+                        {selectedBusiness.email ?? 'No email yet'}
+                      </p>
+                      <p className="mt-1 text-sm text-slate-500">
+                        {selectedBusiness.phone ?? 'No phone yet'}
+                      </p>
+                    </div>
+
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                      <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
+                        Location
+                      </p>
+                      <p className="mt-2 text-sm font-semibold text-[#0B1C30]">
+                        {selectedBusiness.addressLine1}
+                      </p>
+                      {selectedBusiness.addressLine2 ? (
+                        <p className="mt-1 text-sm text-slate-500">{selectedBusiness.addressLine2}</p>
+                      ) : null}
+                      <p className="mt-1 text-sm text-slate-500">
+                        {selectedBusiness.city}, {selectedBusiness.postcode}
+                      </p>
+                      <p className="mt-2 text-xs font-medium text-slate-400">
+                        Timezone: {selectedBusiness.timezone}
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
+              </article>
+
+              <article className="rounded-[28px] border border-slate-200 bg-[#EFF4FF] p-6 shadow-sm">
+                <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">
+                  Next action
+                </p>
+                <h2 className="mt-2 text-2xl font-bold tracking-tight text-[#0B1C30]">
+                  {nextBooking ? 'Prepare the next booking' : 'Finish business configuration'}
+                </h2>
+                <p className="mt-3 text-sm leading-relaxed text-slate-500">
+                  {nextBooking
+                    ? `${getCustomerDisplayName(nextBooking)} is scheduled for ${formatBookingDateTime(
+                        nextBooking.startAt,
+                        nextBooking.businessTimezone
+                      )}.`
+                    : 'Use settings and staff setup to make this business fully bookable and ready for customer traffic.'}
+                </p>
+
+                <div className="mt-5 grid gap-3">
+                  <Link
+                    href={`/manage_business/settings?businessId=${selectedBusiness?.id ?? ''}`}
+                    className="inline-flex h-11 items-center justify-center rounded-full bg-[#0B1C30] px-5 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
+                  >
+                    Edit business settings
+                  </Link>
+                  <Link
+                    href="/manage_business/staff"
+                    className="inline-flex h-11 items-center justify-center rounded-full border border-slate-200 bg-white px-5 text-sm font-semibold text-[#0B1C30] transition-colors hover:bg-slate-50"
+                  >
+                    Review staff setup
+                  </Link>
+                  <Link
+                    href="/start-business"
+                    className="inline-flex h-11 items-center justify-center rounded-full border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50"
+                  >
+                    Add another business
+                  </Link>
+                </div>
+              </article>
+            </div>
+          </section>
+        </div>
+      )}
+    </ManageBusinessShell>
   )
 }

@@ -15,7 +15,7 @@ export const routeAccessMap: AccessMap[] = [
   {
     prefix: '/admin',
     cookieName: AUTH_COOKIE_NAME,
-    allowedRoles: ['ADMIN'],
+    allowedRoles: ['ADMIN', 'SUPER_ADMIN'],
     extractAccessToken: true,
   },
   {
@@ -121,6 +121,7 @@ export const canAccessPath = (pathnameOrUrl: string, roles: readonly string[]) =
 export const getDefaultRedirectForRoles = (roles: readonly string[]) => {
   const normalizedRoles = normalizeRoles(roles)
 
+  if (normalizedRoles.includes('SUPER_ADMIN')) return '/admin/dashboard'
   if (normalizedRoles.includes('ADMIN')) return '/admin/dashboard'
   if (normalizedRoles.includes('BUSINESS_OWNER')) return '/manage_business'
   if (normalizedRoles.includes('CUSTOMER')) return '/discover'

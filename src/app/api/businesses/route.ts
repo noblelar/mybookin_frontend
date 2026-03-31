@@ -7,61 +7,14 @@ import {
   setAuthCookie,
   toAuthSession,
 } from '@/lib/server-auth'
+import { toApiErrorResponse, toBusiness } from '@/lib/server-business'
 import type { ApiErrorResponse } from '@/types/auth'
 import type {
   BackendBusinessResponse,
   BackendCreateBusinessResponse,
-  Business,
   BusinessListResponse,
   CreateBusinessSuccessResponse,
 } from '@/types/business'
-
-const toApiErrorResponse = (payload: unknown, fallbackMessage: string): ApiErrorResponse => {
-  if (
-    typeof payload === 'object' &&
-    payload !== null &&
-    'message' in payload &&
-    typeof payload.message === 'string' &&
-    payload.message.trim().length
-  ) {
-    return { message: payload.message }
-  }
-
-  if (
-    typeof payload === 'object' &&
-    payload !== null &&
-    'error' in payload &&
-    typeof payload.error === 'string' &&
-    payload.error.trim().length
-  ) {
-    return { message: payload.error }
-  }
-
-  return { message: fallbackMessage }
-}
-
-const toBusiness = (business: BackendBusinessResponse): Business => {
-  return {
-    id: business.id,
-    ownerUserId: business.owner_user_id,
-    name: business.name,
-    slugUk: business.slug_uk,
-    description: business.description ?? null,
-    category: business.category,
-    phone: business.phone ?? null,
-    email: business.email ?? null,
-    addressLine1: business.address_line1,
-    addressLine2: business.address_line2 ?? null,
-    city: business.city,
-    postcode: business.postcode,
-    timezone: business.timezone,
-    latitude: business.latitude ?? null,
-    longitude: business.longitude ?? null,
-    status: business.status,
-    createdAt: business.created_at,
-    updatedAt: business.updated_at,
-  }
-}
 
 const buildUnauthorizedResponse = (message: string) => {
   const response = NextResponse.json({ message } satisfies ApiErrorResponse, { status: 401 })
