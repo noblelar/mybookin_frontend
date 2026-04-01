@@ -1,7 +1,8 @@
 'use client'
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from 'react'
+import { Suspense, useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from 'react'
+import Link from 'next/link'
 
 import ManageBusinessShell from '@/components/manage_business/ManageBusinessShell'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -18,6 +19,11 @@ import type {
   BusinessUpdateSuccessResponse,
   UpdateBusinessRequestPayload,
 } from '@/types/business'
+import type {
+  StaffMember,
+  StaffSelfMutationResponse,
+  StaffSelfStatusResponse,
+} from '@/types/staff'
 
 type FormState = {
   name: string
@@ -109,7 +115,7 @@ const toFormState = (business: Business): FormState => ({
   timezone: business.timezone,
 })
 
-export default function ManageBusinessSettingsPage() {
+function ManageBusinessSettingsPageContent() {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -121,6 +127,9 @@ export default function ManageBusinessSettingsPage() {
   const [detectedTimezone, setDetectedTimezone] = useState<string | null>(null)
   const [isLoadingBusinesses, setIsLoadingBusinesses] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [ownerStaffMember, setOwnerStaffMember] = useState<StaffMember | null>(null)
+  const [isLoadingOwnerStaff, setIsLoadingOwnerStaff] = useState(false)
+  const [isSubmittingOwnerStaff, setIsSubmittingOwnerStaff] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
@@ -204,9 +213,58 @@ export default function ManageBusinessSettingsPage() {
     setSuccessMessage(null)
   }, [selectedBusiness])
 
+  useEffect(() => {
+    if (!selectedBusiness) {
+      setOwnerStaffMember(null)
+      return
+    }
+
+    let ignore = false
+
+    async function loadOwnerStaffMembership() {
+      setIsLoadingOwnerStaff(true)
+
+      try {
+        const response = await fetch(`/api/businesses/${selectedBusiness.id}/staff-members/self`, {
+          method: 'GET',
+          cache: 'no-store',
+        })
+
+        const payload = (await response.json()) as StaffSelfStatusResponse | ApiErrorResponse
+        if (ignore) return
+
+        if (!response.ok) {
+          setErrorMessage(
+            getApiErrorMessage(payload, 'We could not load owner staff membership right now.')
+          )
+          setOwnerStaffMember(null)
+          return
+        }
+
+        setOwnerStaffMember((payload as StaffSelfStatusResponse).staffMember)
+      } catch {
+        if (!ignore) {
+          setErrorMessage('We could not load owner staff membership right now.')
+          setOwnerStaffMember(null)
+        }
+      } finally {
+        if (!ignore) setIsLoadingOwnerStaff(false)
+      }
+    }
+
+    void loadOwnerStaffMembership()
+
+    return () => {
+      ignore = true
+    }
+  }, [selectedBusiness])
+
   const timezoneGroups = useMemo(() => {
     return buildTimezoneGroups(timezoneOptions, detectedTimezone, formState.timezone)
   }, [detectedTimezone, formState.timezone, timezoneOptions])
+  const staffWorkspaceHref = selectedBusiness
+    ? `/manage_business/staff?businessId=${selectedBusiness.id}`
+    : '/manage_business/staff'
 
   const handleFieldChange =
     (field: keyof FormState) =>
@@ -275,6 +333,45 @@ export default function ManageBusinessSettingsPage() {
       setIsSubmitting(false)
     }
   }
+
+  async function handleOwnerStaffAction(method: 'POST' | 'DELETE') {
+    if (!selectedBusiness) return
+
+    setErrorMessage(null)
+    setSuccessMessage(null)
+    setIsSubmittingOwnerStaff(true)
+
+    try {
+      const response = await fetch(`/api/businesses/${selectedBusiness.id}/staff-members/self`, {
+        method,
+      })
+
+      const payload = (await response.json()) as StaffSelfMutationResponse | ApiErrorResponse
+      if (!response.ok) {
+        setErrorMessage(
+          getApiErrorMessage(payload, 'We could not update owner staff membership right now.')
+        )
+        return
+      }
+
+      const result = payload as StaffSelfMutationResponse
+      setOwnerStaffMember(result.staffMember)
+      setSuccessMessage(result.message)
+    } catch {
+      setErrorMessage('We could not update owner staff membership right now.')
+    } finally {
+      setIsSubmittingOwnerStaff(false)
+    }
+  }
+
+  const ownerStaffActionLabel = ownerStaffMember
+    ? ownerStaffMember.isActive
+      ? 'Remove me as staff'
+      : 'Add me back as staff'
+    : 'Add me as staff'
+
+  const ownerStaffActionMethod: 'POST' | 'DELETE' =
+    ownerStaffMember?.isActive ? 'DELETE' : 'POST'
 
   return (
     <ManageBusinessShell activeNav="/manage_business/settings" topBarTab="audit">
@@ -530,6 +627,64 @@ export default function ManageBusinessSettingsPage() {
           <aside className="grid gap-6 self-start">
             <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
               <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
+                Owner scheduling access
+              </p>
+              <div className="mt-4 grid gap-3 text-sm leading-relaxed text-slate-500">
+                <p>
+                  Add yourself as staff if you want customers to book time with you directly.
+                  Removing yourself here deactivates your staff profile and clears service
+                  assignments, while keeping historical records intact.
+                </p>
+
+                {isLoadingOwnerStaff ? (
+                  <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-6 text-sm text-slate-500">
+                    Checking owner staff status...
+                  </div>
+                ) : ownerStaffMember ? (
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm font-semibold text-[#0B1C30]">
+                        {ownerStaffMember.displayName}
+                      </p>
+                      <span
+                        className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+                          ownerStaffMember.isActive
+                            ? 'bg-emerald-50 text-emerald-700'
+                            : 'bg-slate-100 text-slate-600'
+                        }`}
+                      >
+                        {ownerStaffMember.isActive ? 'Active staff' : 'Inactive staff'}
+                      </span>
+                    </div>
+                    <p className="mt-2 text-xs text-slate-500">{ownerStaffMember.roleTitle}</p>
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-6 text-sm text-slate-500">
+                    You are not currently listed as staff for this business.
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-5 grid gap-3">
+                <button
+                  type="button"
+                  onClick={() => handleOwnerStaffAction(ownerStaffActionMethod)}
+                  disabled={isSubmittingOwnerStaff || isLoadingOwnerStaff || !selectedBusiness}
+                  className="inline-flex h-11 items-center justify-center rounded-full bg-[#0B1C30] px-5 text-sm font-semibold text-white transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isSubmittingOwnerStaff ? 'Updating...' : ownerStaffActionLabel}
+                </button>
+                <Link
+                  href={staffWorkspaceHref}
+                  className="inline-flex h-11 items-center justify-center rounded-full border border-slate-200 px-5 text-sm font-semibold text-[#0B1C30] transition-colors hover:bg-slate-50"
+                >
+                  Open staff workspace
+                </Link>
+              </div>
+            </section>
+
+            <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+              <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
                 Configuration notes
               </p>
               <div className="mt-4 grid gap-3 text-sm leading-relaxed text-slate-500">
@@ -591,5 +746,27 @@ export default function ManageBusinessSettingsPage() {
         </div>
       )}
     </ManageBusinessShell>
+  )
+}
+
+function ManageBusinessSettingsPageFallback() {
+  return (
+    <div className="min-h-screen bg-[#F1F5F9] p-5 md:p-6">
+      <div className="grid gap-6">
+        <div className="h-40 animate-pulse rounded-[28px] bg-white" />
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="h-[520px] animate-pulse rounded-[28px] bg-white" />
+          <div className="h-[320px] animate-pulse rounded-[28px] bg-white" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default function ManageBusinessSettingsPage() {
+  return (
+    <Suspense fallback={<ManageBusinessSettingsPageFallback />}>
+      <ManageBusinessSettingsPageContent />
+    </Suspense>
   )
 }

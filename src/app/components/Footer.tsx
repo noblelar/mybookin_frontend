@@ -1,3 +1,5 @@
+import Link from 'next/link'
+
 import { TwitterIcon, ShieldIcon, LockIcon } from "@/app/icons"
 
 interface FooterLink {
@@ -22,8 +24,8 @@ const footerColumns: FooterColumn[] = [
   {
     title: "Business",
     links: [
-      { label: "Register", href: "#" },
-      { label: "Admin Login", href: "#" },
+      { label: "Register", href: "/register" },
+      { label: "Admin Login", href: "/admin/login" },
       { label: "Support", href: "#" },
     ],
   },
@@ -50,7 +52,7 @@ export default function Footer() {
         <div className="sa-footer-grid">
           {/* Brand */}
           <div>
-            <a href="/" className="sa-footer-brand-name">MyBookIns</a>
+            <Link href="/" className="sa-footer-brand-name">MyBookIns</Link>
             <p className="sa-footer-brand-desc">
               The definitive multi-tenant engine for service-based businesses who value precision, density, and professional aesthetics.
             </p>
@@ -61,9 +63,9 @@ export default function Footer() {
             <div key={column.title}>
               <p className="sa-footer-col-title">{column.title}</p>
               {column.links.map((link) => (
-                <a key={link.label} href={link.href} className="sa-footer-link">
+                <Link key={link.label} href={link.href} className="sa-footer-link">
                   {link.label}
-                </a>
+                </Link>
               ))}
               {column.title === "Social" && (
                 <div className="sa-footer-social-icons">

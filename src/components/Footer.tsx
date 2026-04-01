@@ -1,4 +1,12 @@
+import Link from 'next/link'
+
 export default function Footer() {
+  const businessLinks = [
+    { label: 'Register', href: '/register' },
+    { label: 'Admin Login', href: '/admin/login' },
+    { label: 'Support', href: '#' },
+  ]
+
   return (
     <footer
       className="w-full"
@@ -76,15 +84,15 @@ export default function Footer() {
             >
               Business
             </p>
-            {['Register', 'Admin Login', 'Support'].map((link) => (
-              <a
-                key={link}
-                href="#"
+            {businessLinks.map((link) => (
+              <Link
+                key={link.label}
+                href={link.href}
                 className="font-inter font-medium text-xs uppercase hover:text-[#0F172A] transition-colors"
                 style={{ color: '#64748B', letterSpacing: '1.2px' }}
               >
-                {link}
-              </a>
+                {link.label}
+              </Link>
             ))}
           </div>
 

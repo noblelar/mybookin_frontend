@@ -1,6 +1,6 @@
 import type { ApiErrorResponse } from '@/types/auth'
-import type { BackendBusinessResponse, Business } from '@/types/business'
-import type { BackendBookingResponse, Booking } from '@/types/booking'
+import type { BackendBusinessResponse, Business, BusinessStatus } from '@/types/business'
+import type { BackendBookingResponse, Booking, BookingStatus } from '@/types/booking'
 
 export const toApiErrorResponse = (
   payload: unknown,
@@ -46,7 +46,7 @@ export const toBusiness = (business: BackendBusinessResponse): Business => {
     timezone: business.timezone,
     latitude: business.latitude ?? null,
     longitude: business.longitude ?? null,
-    status: business.status,
+    status: business.status as BusinessStatus,
     createdAt: business.created_at,
     updatedAt: business.updated_at,
   }
@@ -69,7 +69,7 @@ export const toBooking = (booking: BackendBookingResponse): Booking => {
     startAt: booking.start_at,
     endAt: booking.end_at,
     partySize: booking.party_size,
-    status: booking.status,
+    status: booking.status as BookingStatus,
     cancelledBy: booking.cancelled_by ?? null,
     cancelledByUserId: booking.cancelled_by_user_id ?? null,
     cancelReason: booking.cancel_reason ?? null,

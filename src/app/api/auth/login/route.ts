@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-import { buildAuthSuccessResponse, getBackendBaseUrl } from '@/lib/server-auth'
+import { normalizeRoles } from '@/lib/auth'
+import { buildAuthSuccessResponse, clearAuthCookie, getBackendBaseUrl } from '@/lib/server-auth'
 import type { ApiErrorResponse, BackendAuthResponse } from '@/types/auth'
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.text()
-    const requestBody = body ? (JSON.parse(body) as { returnUrl?: string }) : {}
+    const requestBody = body
+      ? (JSON.parse(body) as { returnUrl?: string; portal?: 'admin' | 'app' })
+      : {}
     const backendURL = getBackendBaseUrl()
 
     const res = await fetch(`${backendURL}/api/v1/auth/login`, {
@@ -28,6 +31,21 @@ export async function POST(req: NextRequest) {
     }
 
     const authResponse = JSON.parse(text) as BackendAuthResponse
+    if (requestBody.portal === 'admin') {
+      const roles = normalizeRoles(authResponse.roles)
+      const isAdminPortalUser = roles.some((role) => role === 'ADMIN' || role === 'SUPER_ADMIN')
+      if (!isAdminPortalUser) {
+        const response = NextResponse.json(
+          {
+            message: 'This account does not have admin access. Use the standard login page instead.',
+          } satisfies ApiErrorResponse,
+          { status: 403 }
+        )
+        clearAuthCookie(response)
+        return response
+      }
+    }
+
     return buildAuthSuccessResponse(authResponse, requestBody.returnUrl, res.status)
   } catch (error) {
     console.error('Login proxy error:', error)

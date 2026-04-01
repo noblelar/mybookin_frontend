@@ -23,6 +23,8 @@ export interface BackendBookingResponse {
   updated_at: string
 }
 
+export type BookingStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'NO_SHOW'
+
 export interface Booking {
   id: string
   businessId: string
@@ -39,7 +41,7 @@ export interface Booking {
   startAt: string
   endAt: string
   partySize: number
-  status: string
+  status: BookingStatus
   cancelledBy: string | null
   cancelledByUserId: string | null
   cancelReason: string | null
@@ -48,6 +50,27 @@ export interface Booking {
   updatedAt: string
 }
 
-export interface BusinessBookingsResponse {
+export interface CreateBookingPayload {
+  assigned_staff_id: string
+  start_at: string
+  party_size: number
+}
+
+export interface CancelBookingPayload {
+  cancel_reason?: string | null
+}
+
+export interface UpdateBookingStatusPayload {
+  status: BookingStatus
+}
+
+export interface BookingListResponse {
   bookings: Booking[]
 }
+
+export interface BookingMutationResponse {
+  message: string
+  booking: Booking
+}
+
+export type BusinessBookingsResponse = BookingListResponse

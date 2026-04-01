@@ -1,5 +1,6 @@
 'use client'
 
+import { Suspense } from 'react'
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
 
@@ -14,7 +15,7 @@ const BellButton = () => (
   </button>
 )
 
-export default function CustomerAuthActions() {
+function CustomerAuthActionsContent() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const { hasHydrated, isAuthenticated, session } = useAuthContext()
@@ -76,5 +77,22 @@ export default function CustomerAuthActions() {
         menuClassName="right-0"
       />
     </div>
+  )
+}
+
+function CustomerAuthActionsFallback() {
+  return (
+    <div className="flex items-center gap-2">
+      <div className="h-9 w-20 animate-pulse rounded-full bg-slate-100" />
+      <div className="hidden h-9 w-24 animate-pulse rounded-full bg-slate-100 sm:block" />
+    </div>
+  )
+}
+
+export default function CustomerAuthActions() {
+  return (
+    <Suspense fallback={<CustomerAuthActionsFallback />}>
+      <CustomerAuthActionsContent />
+    </Suspense>
   )
 }

@@ -18,7 +18,7 @@ const getSecretKey = () => {
   return new TextEncoder().encode(secret)
 }
 
-const PUBLIC_EXACT = new Set<string>(['/', '/login', '/register', '/discover', '/find'])
+const PUBLIC_EXACT = new Set<string>(['/', '/login', '/register', '/admin/login', '/discover', '/find', '/accept-staff-invite'])
 const PUBLIC_PREFIXES = ['/businesses', '/_next', '/favicon', '/assets', '/images', '/api/auth', '/api/health']
 
 const isPublicPath = (pathname: string) => {
@@ -68,11 +68,25 @@ const redirectIfValidToken = async (
   return NextResponse.redirect(new URL(redirectTo, req.url))
 }
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const { pathname, search } = req.nextUrl
   const returnUrl = pathname + search
 
   if (isPublicPath(pathname)) {
+    if (pathname === '/admin/login') {
+      const token = parseAccessTokenFromCookie(req.cookies.get(AUTH_COOKIE_NAME)?.value, true)
+      if (token) {
+        const payload = await verifyJwt(token)
+        if (payload) {
+          const roles = getRolesFromPayload(payload)
+          if (roles.some((role) => role.toUpperCase() === 'ADMIN' || role.toUpperCase() === 'SUPER_ADMIN')) {
+            const redirectTo = resolveAuthenticatedRedirect(roles, req.nextUrl.searchParams.get('returnUrl'))
+            return NextResponse.redirect(new URL(redirectTo, req.url))
+          }
+        }
+      }
+    }
+
     if (GUEST_ONLY_PATHS.has(pathname)) {
       const redirect = await redirectIfValidToken(
         req,
@@ -100,6 +114,11 @@ export async function middleware(req: NextRequest) {
   }
 
   if (!payload) {
+    if (pathname.startsWith('/admin/')) {
+      const params = new URLSearchParams({ returnUrl })
+      return NextResponse.redirect(new URL(`/admin/login?${params.toString()}`, req.url))
+    }
+
     return NextResponse.redirect(new URL(buildLoginRedirectPath(returnUrl), req.url))
   }
 

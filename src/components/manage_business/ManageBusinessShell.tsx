@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { useState, type ReactNode } from 'react'
 
 import ManageBusinessTopBar from '@/components/manage_business/ManageBusinessTopBar'
@@ -8,6 +9,8 @@ import { cn } from '@/lib/utils'
 
 type ManageBusinessNavPath =
   | '/manage_business'
+  | '/manage_business/bookings'
+  | '/manage_business/services'
   | '/manage_business/payouts'
   | '/manage_business/staff'
   | '/manage_business/settings'
@@ -29,6 +32,30 @@ const NAV_ITEMS = [
         <rect x="14" y="3" width="7" height="7" rx="1" fill="currentColor" opacity="0.9" />
         <rect x="3" y="14" width="7" height="7" rx="1" fill="currentColor" opacity="0.9" />
         <rect x="14" y="14" width="7" height="7" rx="1" fill="currentColor" opacity="0.9" />
+      </svg>
+    ),
+  },
+  {
+    label: 'Bookings',
+    href: '/manage_business/bookings',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" strokeWidth="1.5" />
+        <path d="M8 3V7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        <path d="M16 3V7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        <path d="M3 10H21" stroke="currentColor" strokeWidth="1.5" />
+        <rect x="7" y="13" width="4" height="4" rx="0.75" fill="currentColor" />
+      </svg>
+    ),
+  },
+  {
+    label: 'Services',
+    href: '/manage_business/services',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <rect x="4" y="5" width="16" height="4" rx="1" stroke="currentColor" strokeWidth="1.5" />
+        <rect x="4" y="10" width="16" height="4" rx="1" stroke="currentColor" strokeWidth="1.5" />
+        <rect x="4" y="15" width="16" height="4" rx="1" stroke="currentColor" strokeWidth="1.5" />
       </svg>
     ),
   },
@@ -88,6 +115,18 @@ export default function ManageBusinessShell({
   contentClassName,
 }: ManageBusinessShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const searchParams = useSearchParams()
+  const selectedBusinessId = searchParams.get('businessId')
+
+  const buildNavHref = (href: ManageBusinessNavPath) => {
+    if (!selectedBusinessId) {
+      return href
+    }
+
+    const params = new URLSearchParams()
+    params.set('businessId', selectedBusinessId)
+    return `${href}?${params.toString()}`
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#F1F5F9] font-inter">
@@ -125,7 +164,7 @@ export default function ManageBusinessShell({
             return (
               <Link
                 key={item.href}
-                href={item.href}
+                href={buildNavHref(item.href)}
                 className={cn(
                   'relative flex items-center gap-2.5 px-2.5 py-2.5 text-[11px] font-bold transition-colors',
                   isActive

@@ -1,9 +1,9 @@
 'use client'
 
+import { Suspense, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import type { FormEvent } from 'react'
-import { useState, useTransition } from 'react'
 
 import AuthErrorAlert from '@/components/auth/AuthErrorAlert'
 import { useAuthContext } from '@/context/AuthContext'
@@ -43,7 +43,7 @@ type LoginFieldErrors = {
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
-export default function LoginForm() {
+function LoginFormContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { setLoading, setSession } = useAuthContext()
@@ -275,6 +275,13 @@ export default function LoginForm() {
         {isBusy ? 'Signing In...' : 'Sign In'}
       </button>
 
+      <Link
+        href="/discover"
+        className="inline-flex w-full items-center justify-center border border-[rgba(198,198,205,0.50)] px-4 py-3.5 font-inter text-sm font-semibold text-[#0B1C30] transition-colors hover:bg-slate-50"
+      >
+        Go To Discover
+      </Link>
+
       <p className="font-inter text-sm font-normal text-[#64748B] text-center">
         New to MyBookIns?{' '}
         <Link href={registerHref} className="font-bold text-[#0B1C30] hover:underline">
@@ -282,5 +289,27 @@ export default function LoginForm() {
         </Link>
       </p>
     </form>
+  )
+}
+
+function LoginFormFallback() {
+  return (
+    <div className="flex w-full flex-col gap-6">
+      <div className="flex flex-col gap-2">
+        <div className="h-10 w-48 animate-pulse rounded bg-slate-200" />
+        <div className="h-4 w-72 animate-pulse rounded bg-slate-100" />
+      </div>
+      <div className="h-12 animate-pulse rounded bg-slate-100" />
+      <div className="h-12 animate-pulse rounded bg-slate-100" />
+      <div className="h-14 animate-pulse rounded bg-slate-200" />
+    </div>
+  )
+}
+
+export default function LoginForm() {
+  return (
+    <Suspense fallback={<LoginFormFallback />}>
+      <LoginFormContent />
+    </Suspense>
   )
 }

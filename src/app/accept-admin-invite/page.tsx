@@ -1,14 +1,14 @@
 'use client'
 
+import { Suspense, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useMemo, useState } from 'react'
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { useAuthContext } from '@/context/AuthContext'
 import type { ApiErrorResponse, AuthActionSuccessResponse } from '@/types/auth'
 
-export default function AcceptAdminInvitePage() {
+function AcceptAdminInvitePageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { hasHydrated, isAuthenticated, session, setSession } = useAuthContext()
@@ -102,9 +102,11 @@ export default function AcceptAdminInvitePage() {
 
         {hasHydrated && !isAuthenticated && (
           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-            <p className="text-sm font-semibold text-[#0B1C30]">Sign in or create your account first</p>
+            <p className="text-sm font-semibold text-[#0B1C30]">
+              Sign in or create your account first
+            </p>
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              We’ll bring you straight back to this invitation once your session is ready.
+              We&apos;ll bring you straight back to this invitation once your session is ready.
             </p>
             <div className="mt-4 flex flex-wrap gap-3">
               <Link
@@ -145,5 +147,31 @@ export default function AcceptAdminInvitePage() {
         )}
       </div>
     </div>
+  )
+}
+
+function AcceptAdminInvitePageFallback() {
+  return (
+    <div className="min-h-screen bg-slate-100 px-4 py-12 text-[#0B1C30]">
+      <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">
+            Platform Access
+          </p>
+          <h1 className="mt-3 text-3xl font-black tracking-tight">Accept Admin Invitation</h1>
+          <p className="mt-3 max-w-xl text-sm leading-6 text-slate-600">
+            Checking your invitation link...
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default function AcceptAdminInvitePage() {
+  return (
+    <Suspense fallback={<AcceptAdminInvitePageFallback />}>
+      <AcceptAdminInvitePageContent />
+    </Suspense>
   )
 }

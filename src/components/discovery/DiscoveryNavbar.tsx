@@ -1,14 +1,25 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 import CustomerTopBar from '@/components/customer/CustomerTopBar'
 
 const navTabs = ['Hotels', 'Resorts', 'Venues', 'Experiences']
 
 export default function DiscoveryNavbar() {
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState('Hotels')
   const [searchValue, setSearchValue] = useState('')
+
+  const submitSearch = () => {
+    const params = new URLSearchParams()
+    if (searchValue.trim().length) {
+      params.set('q', searchValue.trim())
+    }
+
+    router.push(`/find${params.toString() ? `?${params.toString()}` : ''}`)
+  }
 
   const desktopNav = navTabs.map((tab) => (
     <button
@@ -34,6 +45,12 @@ export default function DiscoveryNavbar() {
         placeholder="Search experiences..."
         value={searchValue}
         onChange={(event) => setSearchValue(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') {
+            event.preventDefault()
+            submitSearch()
+          }
+        }}
         className="w-full bg-transparent text-sm font-medium text-slate-700 placeholder:text-slate-400 outline-none"
       />
     </div>
@@ -49,9 +66,18 @@ export default function DiscoveryNavbar() {
         placeholder="Find services, studios, or artists..."
         value={searchValue}
         onChange={(event) => setSearchValue(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') {
+            event.preventDefault()
+            submitSearch()
+          }
+        }}
         className="flex-1 bg-transparent text-sm font-medium text-slate-600 placeholder:text-slate-400 outline-none"
       />
-      <button className="flex-shrink-0 opacity-60 transition-opacity hover:opacity-100">
+      <button
+        onClick={submitSearch}
+        className="flex-shrink-0 opacity-60 transition-opacity hover:opacity-100"
+      >
         <svg width="17" height="14" viewBox="0 0 17 14" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M7 14V12H10V14H7ZM4 8.5V6.5H13V8.5H4ZM1 3V1H16V3H1Z" fill="#475569"/>
         </svg>

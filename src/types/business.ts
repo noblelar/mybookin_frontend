@@ -26,6 +26,8 @@ export interface BackendCreateBusinessResponse {
   auth: BackendAuthResponse
 }
 
+export type BusinessStatus = 'PENDING' | 'ACTIVE' | 'SUSPENDED'
+
 export interface Business {
   id: string
   ownerUserId: string
@@ -42,7 +44,7 @@ export interface Business {
   timezone: string
   latitude: number | null
   longitude: number | null
-  status: string
+  status: BusinessStatus
   createdAt: string
   updatedAt: string
 }
@@ -62,7 +64,11 @@ export interface CreateBusinessRequestPayload {
   longitude?: number | null
 }
 
-export interface UpdateBusinessRequestPayload extends CreateBusinessRequestPayload {}
+export type UpdateBusinessRequestPayload = CreateBusinessRequestPayload
+
+export interface UpdateBusinessStatusRequestPayload {
+  status: BusinessStatus
+}
 
 export interface BusinessListResponse {
   businesses: Business[]
@@ -76,6 +82,11 @@ export interface CreateBusinessSuccessResponse {
 }
 
 export interface BusinessUpdateSuccessResponse {
+  message: string
+  business: Business
+}
+
+export interface BusinessStatusUpdateSuccessResponse {
   message: string
   business: Business
 }

@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, useMemo, useState } from 'react'
+import { Suspense, useEffect, useMemo, useState } from 'react'
 
 import ManageBusinessShell from '@/components/manage_business/ManageBusinessShell'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -88,7 +88,7 @@ const getCustomerDisplayName = (booking: Booking) => {
   return fullName || booking.customerEmail
 }
 
-export default function ManageBusinessDashboardPage() {
+function ManageBusinessDashboardPageContent() {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -233,6 +233,15 @@ export default function ManageBusinessDashboardPage() {
   }, [bookings])
 
   const nextBooking = upcomingBookings[0] ?? null
+  const settingsHref = selectedBusiness
+    ? `/manage_business/settings?businessId=${selectedBusiness.id}`
+    : '/manage_business/settings'
+  const bookingsHref = selectedBusiness
+    ? `/manage_business/bookings?businessId=${selectedBusiness.id}`
+    : '/manage_business/bookings'
+  const staffHref = selectedBusiness
+    ? `/manage_business/staff?businessId=${selectedBusiness.id}`
+    : '/manage_business/staff'
 
   const setupChecks = selectedBusiness
     ? [
@@ -405,7 +414,7 @@ export default function ManageBusinessDashboardPage() {
                     </h2>
                   </div>
                   <Link
-                    href={`/manage_business/settings?businessId=${selectedBusiness?.id ?? ''}`}
+                    href={settingsHref}
                     className="inline-flex h-10 items-center justify-center rounded-full border border-slate-200 px-4 text-sm font-semibold text-[#0B1C30] transition-colors hover:bg-slate-50"
                   >
                     Open settings
@@ -443,9 +452,17 @@ export default function ManageBusinessDashboardPage() {
                       Live customer activity
                     </h2>
                   </div>
-                  {isLoadingBookings ? (
-                    <span className="text-xs font-semibold text-slate-400">Loading...</span>
-                  ) : null}
+                  <div className="flex items-center gap-3">
+                    <Link
+                      href={bookingsHref}
+                      className="inline-flex h-10 items-center justify-center rounded-full border border-slate-200 px-4 text-sm font-semibold text-[#0B1C30] transition-colors hover:bg-slate-50"
+                    >
+                      Open bookings
+                    </Link>
+                    {isLoadingBookings ? (
+                      <span className="text-xs font-semibold text-slate-400">Loading...</span>
+                    ) : null}
+                  </div>
                 </div>
 
                 {isLoadingBookings ? (
@@ -490,7 +507,7 @@ export default function ManageBusinessDashboardPage() {
                 ) : (
                   <div className="mt-5 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-5 text-sm leading-relaxed text-slate-500">
                     No bookings yet for this business. Once customers start booking services, this
-                    area will become the owner’s live operations feed.
+                    area will become the owner&apos;s live operations feed.
                   </div>
                 )}
               </article>
@@ -554,13 +571,19 @@ export default function ManageBusinessDashboardPage() {
 
                 <div className="mt-5 grid gap-3">
                   <Link
-                    href={`/manage_business/settings?businessId=${selectedBusiness?.id ?? ''}`}
+                    href={settingsHref}
                     className="inline-flex h-11 items-center justify-center rounded-full bg-[#0B1C30] px-5 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
                   >
                     Edit business settings
                   </Link>
                   <Link
-                    href="/manage_business/staff"
+                    href={bookingsHref}
+                    className="inline-flex h-11 items-center justify-center rounded-full border border-slate-200 bg-white px-5 text-sm font-semibold text-[#0B1C30] transition-colors hover:bg-slate-50"
+                  >
+                    Open bookings queue
+                  </Link>
+                  <Link
+                    href={staffHref}
                     className="inline-flex h-11 items-center justify-center rounded-full border border-slate-200 bg-white px-5 text-sm font-semibold text-[#0B1C30] transition-colors hover:bg-slate-50"
                   >
                     Review staff setup
@@ -578,5 +601,29 @@ export default function ManageBusinessDashboardPage() {
         </div>
       )}
     </ManageBusinessShell>
+  )
+}
+
+function ManageBusinessDashboardPageFallback() {
+  return (
+    <div className="min-h-screen bg-[#F1F5F9] p-5 md:p-6">
+      <div className="grid gap-6">
+        <div className="h-40 animate-pulse rounded-[28px] bg-white" />
+        <div className="grid gap-4 md:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <div key={index} className="h-32 animate-pulse rounded-[24px] bg-white" />
+          ))}
+        </div>
+        <div className="h-96 animate-pulse rounded-[28px] bg-white" />
+      </div>
+    </div>
+  )
+}
+
+export default function ManageBusinessDashboardPage() {
+  return (
+    <Suspense fallback={<ManageBusinessDashboardPageFallback />}>
+      <ManageBusinessDashboardPageContent />
+    </Suspense>
   )
 }

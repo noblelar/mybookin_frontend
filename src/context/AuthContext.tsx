@@ -27,7 +27,7 @@ interface AuthContextType {
   setSession: Dispatch<SetStateAction<AuthSession | null>>
   refreshSession: () => Promise<void>
   clearSession: () => void
-  logout: () => Promise<LogoutResult>
+  logout: (redirectTo?: string) => Promise<LogoutResult>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -96,7 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(false)
   }
 
-  async function logout() {
+  async function logout(redirectTo = '/login') {
     setIsLoading(true)
 
     try {
@@ -120,7 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       setSession(null)
-      router.replace('/login')
+      router.replace(redirectTo)
       router.refresh()
 
       return {

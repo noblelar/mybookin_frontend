@@ -1,7 +1,7 @@
 'use client'
 
 import type { FormEvent } from 'react'
-import { useState, useTransition } from 'react'
+import { Suspense, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 
@@ -32,7 +32,7 @@ const initialFormState: RegisterFormState = {
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
-export default function AccountDetailsForm() {
+function AccountDetailsFormContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { setLoading, setSession } = useAuthContext()
@@ -232,5 +232,28 @@ export default function AccountDetailsForm() {
         <SocialAuthButton provider="apple" disabled={isBusy} />
       </div>
     </form>
+  )
+}
+
+function AccountDetailsFormFallback() {
+  return (
+    <div className="flex w-full flex-col gap-6">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="h-12 animate-pulse rounded bg-slate-100" />
+        <div className="h-12 animate-pulse rounded bg-slate-100" />
+      </div>
+      <div className="h-12 animate-pulse rounded bg-slate-100" />
+      <div className="h-12 animate-pulse rounded bg-slate-100" />
+      <div className="h-12 animate-pulse rounded bg-slate-100" />
+      <div className="h-14 animate-pulse rounded bg-slate-200" />
+    </div>
+  )
+}
+
+export default function AccountDetailsForm() {
+  return (
+    <Suspense fallback={<AccountDetailsFormFallback />}>
+      <AccountDetailsFormContent />
+    </Suspense>
   )
 }

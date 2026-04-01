@@ -1,8 +1,10 @@
+import Link from 'next/link'
+
 export default function Navigation() {
   return (
     <nav className="sa-nav">
       <div className="sa-nav-inner">
-        <a href="/" className="sa-nav-logo">MyBookIns</a>
+        <Link href="/" className="sa-nav-logo">MyBookIns</Link>
 
         <ul className="sa-nav-links">
           <li><a href="#" className="sa-nav-link active">Discover</a></li>
@@ -12,8 +14,8 @@ export default function Navigation() {
         </ul>
 
         <div className="sa-nav-actions">
-          <a href="#" className="sa-btn-ghost">Admin Login</a>
-          <a href="#" className="sa-btn-black">Get Started</a>
+          <Link href="/admin/login" className="sa-btn-ghost">Admin Login</Link>
+          <Link href="/register" className="sa-btn-black">Get Started</Link>
         </div>
       </div>
       <div className="sa-nav-divider" />
