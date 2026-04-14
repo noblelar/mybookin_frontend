@@ -1,5 +1,11 @@
 import type { ApiErrorResponse } from '@/types/auth'
-import type { BackendBusinessResponse, Business, BusinessStatus } from '@/types/business'
+import type {
+  BackendBusinessHoursResponse,
+  BackendBusinessResponse,
+  Business,
+  BusinessHoursDay,
+  BusinessStatus,
+} from '@/types/business'
 import type { BackendBookingResponse, Booking, BookingStatus } from '@/types/booking'
 
 export const toApiErrorResponse = (
@@ -49,6 +55,19 @@ export const toBusiness = (business: BackendBusinessResponse): Business => {
     status: business.status as BusinessStatus,
     createdAt: business.created_at,
     updatedAt: business.updated_at,
+  }
+}
+
+export const toBusinessHoursDay = (
+  businessHours: BackendBusinessHoursResponse
+): BusinessHoursDay => {
+  return {
+    id: businessHours.id,
+    businessId: businessHours.business_id,
+    dayOfWeek: businessHours.day_of_week,
+    openTime: businessHours.open_time ?? null,
+    closeTime: businessHours.close_time ?? null,
+    isClosed: businessHours.is_closed,
   }
 }
 

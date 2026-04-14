@@ -7,10 +7,17 @@ import { useSearchParams } from 'next/navigation'
 
 import CustomerTopBar from '@/components/customer/CustomerTopBar'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { getBusinessCoverUrl, getBusinessLogoUrl } from '@/lib/media'
 import { useDiscoveryBusinessDetail } from '@/hooks/useDiscoveryBusinessDetail'
-import { formatCurrency, formatDurationLabel, getApiErrorMessage } from '@/lib/utils'
+import {
+  formatCurrency,
+  formatDurationLabel,
+  getApiErrorMessage,
+  getCurrentDateInTimeZone,
+} from '@/lib/utils'
 import type { Availability, AvailabilityResponse } from '@/types/availability'
 import type { ApiErrorResponse } from '@/types/auth'
+import type { BusinessDayOfWeek } from '@/types/business'
 import type { ServiceStaffAssignmentResponse, StaffMember } from '@/types/staff'
 
 const staffImages = [
@@ -19,18 +26,40 @@ const staffImages = [
   'https://api.builder.io/api/v1/image/assets/TEMP/8c088a9c7625c7b54fff538728cdcf1186f08f9d?width=150',
 ]
 
-const buildWeek = () => {
-  const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
-  const today = new Date()
+const BUSINESS_DAY_OF_WEEK_VALUES: BusinessDayOfWeek[] = [
+  'SUNDAY',
+  'MONDAY',
+  'TUESDAY',
+  'WEDNESDAY',
+  'THURSDAY',
+  'FRIDAY',
+  'SATURDAY',
+]
 
-  return Array.from({ length: 7 }, (_, index) => {
-    const date = new Date(today)
-    date.setDate(today.getDate() + index)
+const addDaysToDateString = (value: string, daysToAdd: number) => {
+  const [year, month, day] = value.split('-').map(Number)
+  const date = new Date(Date.UTC(year, month - 1, day))
+  date.setUTCDate(date.getUTCDate() + daysToAdd)
+  return date.toISOString().slice(0, 10)
+}
+
+const getBusinessDayOfWeekFromDate = (value: string): BusinessDayOfWeek => {
+  const [year, month, day] = value.split('-').map(Number)
+  const date = new Date(Date.UTC(year, month - 1, day))
+  return BUSINESS_DAY_OF_WEEK_VALUES[date.getUTCDay()] ?? 'SUNDAY'
+}
+
+const buildWeek = (startDate: string) => {
+  const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
+
+  return Array.from({ length: 8 }, (_, index) => {
+    const dateString = addDaysToDateString(startDate, index)
+    const date = new Date(`${dateString}T12:00:00Z`)
 
     return {
-      key: date.toISOString().slice(0, 10),
-      label: days[date.getDay()],
-      num: date.getDate(),
+      key: dateString,
+      label: days[date.getUTCDay()],
+      num: date.getUTCDate(),
     }
   })
 }
@@ -76,7 +105,7 @@ function BookPageContent({
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(requestedServiceId)
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([])
   const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null)
-  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().slice(0, 10))
+  const [selectedDate, setSelectedDate] = useState('')
   const [availability, setAvailability] = useState<Availability | null>(null)
   const [selectedSlotStartAt, setSelectedSlotStartAt] = useState<string | null>(null)
   const [isLoadingStaff, setIsLoadingStaff] = useState(false)
@@ -89,19 +118,50 @@ function BookPageContent({
 
   const { detail, isLoading, errorMessage } = useDiscoveryBusinessDetail(resolvedSlug ?? '')
 
-  const week = useMemo(() => buildWeek(), [])
+  const businessToday = detail ? getCurrentDateInTimeZone(detail.business.timezone) : ''
+  const maxSelectableDate = businessToday ? addDaysToDateString(businessToday, 7) : ''
+  const week = useMemo(
+    () => (businessToday ? buildWeek(businessToday) : []),
+    [businessToday]
+  )
+  const closedDateKeys = useMemo(() => {
+    if (!detail) return new Set<string>()
+
+    return new Set(
+      week
+        .filter((day) =>
+          detail.businessHours.some(
+            (businessHour) => businessHour.dayOfWeek === getBusinessDayOfWeekFromDate(day.key) && businessHour.isClosed
+          )
+        )
+        .map((day) => day.key)
+    )
+  }, [detail, week])
+  const firstSelectableDate = useMemo(
+    () => week.find((day) => !closedDateKeys.has(day.key))?.key ?? businessToday,
+    [businessToday, closedDateKeys, week]
+  )
   const selectedService = useMemo(
     () => detail?.services.find((service) => service.id === selectedServiceId) ?? detail?.services[0] ?? null,
     [detail?.services, selectedServiceId]
+  )
+  const visibleSlots = useMemo(
+    () =>
+      availability?.slots.filter((slot) => {
+        const slotTimestamp = new Date(slot.startAt).getTime()
+        return Number.isFinite(slotTimestamp) && slotTimestamp > Date.now()
+      }) ?? [],
+    [availability?.slots]
   )
   const selectedStaff = useMemo(
     () => staffMembers.find((staffMember) => staffMember.id === selectedStaffId) ?? null,
     [selectedStaffId, staffMembers]
   )
   const selectedSlot = useMemo(
-    () => availability?.slots.find((slot) => slot.startAt === selectedSlotStartAt) ?? null,
-    [availability?.slots, selectedSlotStartAt]
+    () => visibleSlots.find((slot) => slot.startAt === selectedSlotStartAt) ?? null,
+    [selectedSlotStartAt, visibleSlots]
   )
+  const selectedDateIsClosed = closedDateKeys.has(selectedDate)
 
   useEffect(() => {
     if (!detail?.services.length) return
@@ -112,6 +172,34 @@ function BookPageContent({
 
     setSelectedServiceId(requestedService?.id ?? detail.services[0]?.id ?? null)
   }, [detail?.services, requestedServiceId])
+
+  useEffect(() => {
+    if (!businessToday) return
+
+    setSelectedDate((currentValue) => {
+      if (
+        !currentValue ||
+        currentValue < businessToday ||
+        currentValue > maxSelectableDate ||
+        closedDateKeys.has(currentValue)
+      ) {
+        return firstSelectableDate
+      }
+
+      return currentValue
+    })
+  }, [businessToday, closedDateKeys, firstSelectableDate, maxSelectableDate])
+
+  useEffect(() => {
+    if (!visibleSlots.length) {
+      setSelectedSlotStartAt(null)
+      return
+    }
+
+    if (!selectedSlotStartAt || !visibleSlots.some((slot) => slot.startAt === selectedSlotStartAt)) {
+      setSelectedSlotStartAt(null)
+    }
+  }, [selectedSlotStartAt, visibleSlots])
 
   useEffect(() => {
     if (!detail || !selectedService) {
@@ -173,7 +261,7 @@ function BookPageContent({
   }, [detail, selectedService])
 
   useEffect(() => {
-    if (!detail || !selectedService || !selectedStaffId) {
+    if (!detail || !selectedService || !selectedStaffId || !selectedDate || selectedDateIsClosed) {
       setAvailability(null)
       setSelectedSlotStartAt(null)
       return
@@ -231,7 +319,7 @@ function BookPageContent({
     return () => {
       ignore = true
     }
-  }, [detail, selectedDate, selectedService, selectedStaffId])
+  }, [detail, selectedDate, selectedDateIsClosed, selectedService, selectedStaffId])
 
   if (!resolvedSlug || isLoading) {
     return (
@@ -261,6 +349,10 @@ function BookPageContent({
   }
 
   const canConfirm = Boolean(selectedStaff && selectedSlot)
+  const availabilityTimezone = availability?.timezone ?? detail.business.timezone
+  const availabilityDurationMinutes = availability?.durationMinutes ?? selectedService.durationMinutes
+  const businessCoverImage = getBusinessCoverUrl(detail.media)
+  const businessLogoImage = getBusinessLogoUrl(detail.media)
   const checkoutHref = canConfirm
     ? `/businesses/${resolvedSlug}/checkout?serviceId=${encodeURIComponent(selectedService.id)}&staffId=${encodeURIComponent(selectedStaff!.id)}&startAt=${encodeURIComponent(selectedSlot!.startAt)}`
     : '#'
@@ -374,23 +466,35 @@ function BookPageContent({
           </div>
 
           <div className="bg-white border border-slate-200 shadow-sm px-5 py-4">
-            <div className="grid grid-cols-7 gap-1">
+            <div className="grid grid-cols-4 gap-1 md:grid-cols-8">
               {week.map((day) => (
                 <button
                   key={day.key}
+                  disabled={closedDateKeys.has(day.key)}
                   onClick={() => setSelectedDate(day.key)}
                   className={`flex flex-col items-center py-3 px-1 transition ${
-                    selectedDate === day.key
-                      ? 'bg-[#0B1C30] text-white'
-                      : 'hover:bg-slate-100 text-[#0B1C30]'
+                    closedDateKeys.has(day.key)
+                        ? 'bg-slate-50 text-slate-300 cursor-not-allowed'
+                        : selectedDate === day.key
+                          ? 'bg-[#0B1C30] text-white'
+                          : 'hover:bg-slate-100 text-[#0B1C30]'
                   }`}
                 >
                   <span className={`text-[9px] font-bold tracking-widest uppercase mb-1 ${
-                    selectedDate === day.key ? 'text-white/60' : 'text-slate-500'
+                    closedDateKeys.has(day.key)
+                      ? 'text-slate-400'
+                      : selectedDate === day.key
+                        ? 'text-white/60'
+                        : 'text-slate-500'
                   }`}>
                     {day.label}
                   </span>
                   <span className="text-lg font-black leading-none">{day.num}</span>
+                  {closedDateKeys.has(day.key) ? (
+                    <span className="mt-1 text-[8px] font-black uppercase tracking-[0.14em] text-slate-400">
+                      Closed
+                    </span>
+                  ) : null}
                 </button>
               ))}
             </div>
@@ -410,15 +514,20 @@ function BookPageContent({
               <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-6 text-sm text-slate-500">
                 Select a professional to see live bookable slots for {formatDateLabel(selectedDate, detail.business.timezone)}.
               </div>
+            ) : selectedDateIsClosed ? (
+              <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-6 text-sm text-slate-500">
+                This business is closed on {formatDateLabel(selectedDate, detail.business.timezone)}.
+                Choose another day to continue.
+              </div>
             ) : isLoadingAvailability ? (
               <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
                 {Array.from({ length: 6 }).map((_, index) => (
                   <div key={index} className="h-20 animate-pulse rounded-2xl bg-slate-100" />
                 ))}
               </div>
-            ) : availability?.slots.length ? (
+            ) : visibleSlots.length ? (
               <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                {availability.slots.map((slot) => {
+                {visibleSlots.map((slot) => {
                   const isSelected = selectedSlotStartAt === slot.startAt
                   return (
                     <button
@@ -431,10 +540,10 @@ function BookPageContent({
                       }`}
                     >
                       <span className={`text-sm font-bold leading-none ${isSelected ? 'text-white' : 'text-[#0B1C30]'}`}>
-                        {formatSlotTime(slot.startAt, availability.timezone)}
+                        {formatSlotTime(slot.startAt, availabilityTimezone)}
                       </span>
                       <span className={`text-[9px] font-bold tracking-wider uppercase mt-0.5 ${isSelected ? 'text-white/70' : 'text-slate-400'}`}>
-                        {formatDurationLabel(availability.durationMinutes)}
+                        {formatDurationLabel(availabilityDurationMinutes)}
                       </span>
                     </button>
                   )
@@ -450,6 +559,27 @@ function BookPageContent({
 
         <div className="hidden lg:flex flex-col gap-4 w-72 xl:w-80 flex-shrink-0 h-screen sticky top-0 overflow-y-auto">
           <div className="bg-white border border-slate-200 shadow-sm p-5">
+            {businessCoverImage ? (
+              <div className="relative mb-5 h-32 overflow-hidden rounded-2xl bg-slate-100">
+                <Image
+                  src={businessCoverImage}
+                  alt={detail.business.name}
+                  fill
+                  className="object-cover"
+                />
+                {businessLogoImage ? (
+                  <div className="absolute bottom-3 left-3 overflow-hidden rounded-2xl border border-white/70 bg-white shadow-sm">
+                    <Image
+                      src={businessLogoImage}
+                      alt={`${detail.business.name} logo`}
+                      width={48}
+                      height={48}
+                      className="h-12 w-12 object-contain p-2"
+                    />
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
             <p className="text-[9px] font-black tracking-[0.14em] uppercase text-slate-400 mb-2">
               Selected Service
             </p>

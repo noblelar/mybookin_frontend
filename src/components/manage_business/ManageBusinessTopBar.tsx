@@ -1,17 +1,29 @@
 'use client'
 
+import Link from 'next/link'
+
 import AuthUserMenu from '@/components/auth/AuthUserMenu'
+
+export interface ManageBusinessTopBarSubNavItem {
+  key: string
+  label: string
+  href: string
+}
 
 interface ManageBusinessTopBarProps {
   activeTab?: 'analytics' | 'reports' | 'audit'
   onTabChange?: (tab: 'analytics' | 'reports' | 'audit') => void
   onMenuClick?: () => void
+  subNavItems?: ManageBusinessTopBarSubNavItem[]
+  activeSubNav?: string
 }
 
 export default function ManageBusinessTopBar({
   activeTab = 'analytics',
   onTabChange,
   onMenuClick,
+  subNavItems,
+  activeSubNav,
 }: ManageBusinessTopBarProps) {
   return (
     <header className="bg-white border-b border-slate-200 flex-shrink-0">
@@ -33,23 +45,37 @@ export default function ManageBusinessTopBar({
 
         {/* Tab nav */}
         <nav className="flex items-center gap-6 flex-1">
-          {([
-            { key: 'analytics', label: 'Analytics' },
-            { key: 'reports', label: 'Reports' },
-            { key: 'audit', label: 'Audit Log' },
-          ] as const).map(tab => (
-            <button
-              key={tab.key}
-              onClick={() => onTabChange?.(tab.key)}
-              className={`text-[10px] font-black uppercase tracking-[0.12em] pb-0.5 transition-colors ${
-                activeTab === tab.key
-                  ? 'text-[#0B1C30] border-b-2 border-[#0B1C30]'
-                  : 'text-slate-400 hover:text-slate-600'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+          {subNavItems?.length
+            ? subNavItems.map((item) => (
+                <Link
+                  key={item.key}
+                  href={item.href}
+                  className={`text-[10px] font-black uppercase tracking-[0.12em] pb-0.5 transition-colors ${
+                    activeSubNav === item.key
+                      ? 'text-[#0B1C30] border-b-2 border-[#0B1C30]'
+                      : 'text-slate-400 hover:text-slate-600'
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              ))
+            : ([
+                { key: 'analytics', label: 'Analytics' },
+                { key: 'reports', label: 'Reports' },
+                { key: 'audit', label: 'Audit Log' },
+              ] as const).map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => onTabChange?.(tab.key)}
+                  className={`text-[10px] font-black uppercase tracking-[0.12em] pb-0.5 transition-colors ${
+                    activeTab === tab.key
+                      ? 'text-[#0B1C30] border-b-2 border-[#0B1C30]'
+                      : 'text-slate-400 hover:text-slate-600'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
         </nav>
 
         {/* Right actions */}

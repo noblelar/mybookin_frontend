@@ -93,7 +93,13 @@ export default function AdminSidebar({ activePath, mobileOpen = false, onMobileC
     session?.user.email ||
     'Admin Core'
   const subtitle = isSuperAdmin ? 'Platform Super Admin' : 'Platform Admin'
-  const visibleNavItems = navItems.filter((item) => item.href !== '/admin/users' || isSuperAdmin)
+  const visibleNavItems = navItems.filter((item) => {
+    if (item.href === '/admin/users' || item.href === '/admin/subscriptions') {
+      return isSuperAdmin
+    }
+
+    return true
+  })
 
   return (
     <>

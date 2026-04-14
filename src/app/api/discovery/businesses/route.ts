@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+import { getBusinessCoverUrl, getBusinessLogoUrl } from '@/lib/media'
 import { getBackendBaseUrl } from '@/lib/server-auth'
 import { toApiErrorResponse, toBusiness } from '@/lib/server-business'
+import { toBusinessMedia } from '@/lib/server-media'
 import { toService } from '@/lib/server-service'
 import type { ApiErrorResponse } from '@/types/auth'
 import type { BackendBusinessResponse } from '@/types/business'
 import type { DiscoveryBusinessListResponse, DiscoveryBusinessSummary } from '@/types/discovery'
+import type { BackendBusinessMediaResponse } from '@/types/media'
 import type { BackendServiceResponse } from '@/types/service'
 
 const fetchPublicServices = async (backendURL: string, businessId: string) => {
@@ -26,12 +29,33 @@ const fetchPublicServices = async (backendURL: string, businessId: string) => {
   return (JSON.parse(text) as BackendServiceResponse[]).map(toService)
 }
 
+const fetchPublicMedia = async (backendURL: string, businessId: string) => {
+  const response = await fetch(`${backendURL}/api/v1/businesses/${businessId}/media`, {
+    method: 'GET',
+    cache: 'no-store',
+  })
+
+  if (!response.ok) {
+    return []
+  }
+
+  const text = await response.text()
+  if (!text.trim().length) {
+    return []
+  }
+
+  return (JSON.parse(text) as BackendBusinessMediaResponse[]).map(toBusinessMedia)
+}
+
 const toDiscoverySummary = async (
   backendURL: string,
   businessPayload: BackendBusinessResponse
 ): Promise<DiscoveryBusinessSummary> => {
   const business = toBusiness(businessPayload)
-  const services = await fetchPublicServices(backendURL, business.id)
+  const [services, media] = await Promise.all([
+    fetchPublicServices(backendURL, business.id),
+    fetchPublicMedia(backendURL, business.id),
+  ])
   const startingPrice = services.length
     ? [...services]
         .sort(
@@ -45,6 +69,8 @@ const toDiscoverySummary = async (
     activeServiceCount: services.length,
     startingPrice,
     featuredServiceName: services[0]?.name ?? null,
+    logoImageUrl: getBusinessLogoUrl(media),
+    coverImageUrl: getBusinessCoverUrl(media),
   }
 }
 

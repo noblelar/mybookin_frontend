@@ -1,12 +1,14 @@
 import { NextResponse } from 'next/server'
 
 import { getBackendBaseUrl } from '@/lib/server-auth'
-import { toApiErrorResponse, toBusiness } from '@/lib/server-business'
+import { toApiErrorResponse, toBusiness, toBusinessHoursDay } from '@/lib/server-business'
+import { toBusinessMedia } from '@/lib/server-media'
 import { toService, toServiceCategory } from '@/lib/server-service'
 import { toStaffMember } from '@/lib/server-staff'
 import type { ApiErrorResponse } from '@/types/auth'
-import type { BackendBusinessResponse } from '@/types/business'
+import type { BackendBusinessHoursResponse, BackendBusinessResponse } from '@/types/business'
 import type { DiscoveryBusinessDetailResponse } from '@/types/discovery'
+import type { BackendBusinessMediaResponse } from '@/types/media'
 import type { BackendServiceCategoryResponse, BackendServiceResponse } from '@/types/service'
 import type { BackendStaffMemberResponse } from '@/types/staff'
 
@@ -59,14 +61,16 @@ export async function GET(
     }
 
     const businessId = matchedBusiness.id
-    const [businessResult, categoriesResult, servicesResult, staffResult] = await Promise.all([
+    const [businessResult, hoursResult, mediaResult, categoriesResult, servicesResult, staffResult] = await Promise.all([
       fetchJsonText(`${backendURL}/api/v1/businesses/${businessId}`),
+      fetchJsonText(`${backendURL}/api/v1/businesses/${businessId}/hours`),
+      fetchJsonText(`${backendURL}/api/v1/businesses/${businessId}/media`),
       fetchJsonText(`${backendURL}/api/v1/businesses/${businessId}/service-categories`),
       fetchJsonText(`${backendURL}/api/v1/businesses/${businessId}/services`),
       fetchJsonText(`${backendURL}/api/v1/businesses/${businessId}/staff-members`),
     ])
 
-    for (const result of [businessResult, categoriesResult, servicesResult, staffResult]) {
+    for (const result of [businessResult, hoursResult, mediaResult, categoriesResult, servicesResult, staffResult]) {
       if (!result.response.ok) {
         const json = result.contentType.includes('application/json')
           ? toApiErrorResponse(JSON.parse(result.text), 'Request failed.')
@@ -79,6 +83,12 @@ export async function GET(
     return NextResponse.json(
       {
         business: toBusiness(JSON.parse(businessResult.text) as BackendBusinessResponse),
+        businessHours: hoursResult.text.trim().length
+          ? (JSON.parse(hoursResult.text) as BackendBusinessHoursResponse[]).map(toBusinessHoursDay)
+          : [],
+        media: mediaResult.text.trim().length
+          ? (JSON.parse(mediaResult.text) as BackendBusinessMediaResponse[]).map(toBusinessMedia)
+          : [],
         categories: categoriesResult.text.trim().length
           ? (JSON.parse(categoriesResult.text) as BackendServiceCategoryResponse[]).map(
               toServiceCategory

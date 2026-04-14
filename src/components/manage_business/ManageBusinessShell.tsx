@@ -4,13 +4,16 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useState, type ReactNode } from 'react'
 
-import ManageBusinessTopBar from '@/components/manage_business/ManageBusinessTopBar'
+import ManageBusinessTopBar, {
+  type ManageBusinessTopBarSubNavItem,
+} from '@/components/manage_business/ManageBusinessTopBar'
 import { cn } from '@/lib/utils'
 
 type ManageBusinessNavPath =
   | '/manage_business'
   | '/manage_business/bookings'
   | '/manage_business/services'
+  | '/manage_business/resources'
   | '/manage_business/payouts'
   | '/manage_business/staff'
   | '/manage_business/settings'
@@ -20,6 +23,8 @@ interface ManageBusinessShellProps {
   children: ReactNode
   topBarTab?: 'analytics' | 'reports' | 'audit'
   contentClassName?: string
+  subNavItems?: ManageBusinessTopBarSubNavItem[]
+  activeSubNav?: string
 }
 
 const NAV_ITEMS = [
@@ -71,6 +76,19 @@ const NAV_ITEMS = [
     ),
   },
   {
+    label: 'Resources',
+    href: '/manage_business/resources',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <rect x="4" y="4" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
+        <rect x="13" y="4" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
+        <rect x="4" y="13" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
+        <path d="M13 16.5h7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        <path d="M16.5 13v7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
     label: 'Staff',
     href: '/manage_business/staff',
     icon: (
@@ -113,6 +131,8 @@ export default function ManageBusinessShell({
   children,
   topBarTab = 'analytics',
   contentClassName,
+  subNavItems,
+  activeSubNav,
 }: ManageBusinessShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const searchParams = useSearchParams()
@@ -199,6 +219,8 @@ export default function ManageBusinessShell({
         <ManageBusinessTopBar
           activeTab={topBarTab}
           onMenuClick={() => setSidebarOpen(true)}
+          subNavItems={subNavItems}
+          activeSubNav={activeSubNav}
         />
 
         <main className={cn('flex-1 overflow-y-auto p-5 md:p-6', contentClassName)}>{children}</main>

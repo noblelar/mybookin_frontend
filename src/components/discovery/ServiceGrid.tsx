@@ -84,7 +84,7 @@ export default function ServiceGrid({
         {businesses.map((item) => (
           <ServiceCard
             key={item.business.id}
-            image={categoryImages[item.business.category] ?? categoryImages.ETC}
+            image={item.coverImageUrl ?? categoryImages[item.business.category] ?? categoryImages.ETC}
             category={formatCategoryLabel(item.business.category)}
             name={item.business.name}
             location={`${item.business.city}, ${item.business.postcode}`}
@@ -104,7 +104,7 @@ export default function ServiceGrid({
         {businesses.map((item) => (
           <ServiceCard
             key={item.business.id}
-            image={categoryImages[item.business.category] ?? categoryImages.ETC}
+            image={item.coverImageUrl ?? categoryImages[item.business.category] ?? categoryImages.ETC}
             category={formatCategoryLabel(item.business.category)}
             name={item.business.name}
             location={`${item.business.city}, ${item.business.postcode}`}

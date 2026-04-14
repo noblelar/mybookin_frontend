@@ -21,6 +21,24 @@ export interface BackendBusinessResponse {
   updated_at: string
 }
 
+export type BusinessDayOfWeek =
+  | 'MONDAY'
+  | 'TUESDAY'
+  | 'WEDNESDAY'
+  | 'THURSDAY'
+  | 'FRIDAY'
+  | 'SATURDAY'
+  | 'SUNDAY'
+
+export interface BackendBusinessHoursResponse {
+  id: string
+  business_id: string
+  day_of_week: BusinessDayOfWeek
+  open_time?: string | null
+  close_time?: string | null
+  is_closed: boolean
+}
+
 export interface BackendCreateBusinessResponse {
   business: BackendBusinessResponse
   auth: BackendAuthResponse
@@ -49,6 +67,15 @@ export interface Business {
   updatedAt: string
 }
 
+export interface BusinessHoursDay {
+  id: string
+  businessId: string
+  dayOfWeek: BusinessDayOfWeek
+  openTime: string | null
+  closeTime: string | null
+  isClosed: boolean
+}
+
 export interface CreateBusinessRequestPayload {
   name: string
   description?: string | null
@@ -70,6 +97,15 @@ export interface UpdateBusinessStatusRequestPayload {
   status: BusinessStatus
 }
 
+export interface UpdateBusinessHoursPayload {
+  hours: {
+    day_of_week: BusinessDayOfWeek
+    open_time?: string | null
+    close_time?: string | null
+    is_closed: boolean
+  }[]
+}
+
 export interface BusinessListResponse {
   businesses: Business[]
 }
@@ -89,4 +125,13 @@ export interface BusinessUpdateSuccessResponse {
 export interface BusinessStatusUpdateSuccessResponse {
   message: string
   business: Business
+}
+
+export interface BusinessHoursResponse {
+  hours: BusinessHoursDay[]
+}
+
+export interface BusinessHoursMutationResponse {
+  message: string
+  hours: BusinessHoursDay[]
 }

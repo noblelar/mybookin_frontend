@@ -8,7 +8,9 @@ import CustomerTopBar from '@/components/customer/CustomerTopBar'
 import MobileTabBar from '@/components/discovery/MobileTabBar'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { useDiscoveryBusinessDetail } from '@/hooks/useDiscoveryBusinessDetail'
+import { getBusinessCoverUrl, getBusinessGallery, getBusinessLogoUrl } from '@/lib/media'
 import { formatCurrency, formatDurationLabel } from '@/lib/utils'
+import type { BusinessDayOfWeek } from '@/types/business'
 
 const heroImages: Record<string, string> = {
   BARBER: 'https://api.builder.io/api/v1/image/assets/TEMP/d508ac7f547631f26d8bd728c36d889f72ae660e?width=1200',
@@ -32,6 +34,58 @@ const getInitials = (value: string) =>
     .map((part) => part.slice(0, 1).toUpperCase())
     .join('')
     .slice(0, 2)
+
+const BUSINESS_HOURS_ROWS: Array<{ dayOfWeek: BusinessDayOfWeek; label: string }> = [
+  { dayOfWeek: 'MONDAY', label: 'Monday' },
+  { dayOfWeek: 'TUESDAY', label: 'Tuesday' },
+  { dayOfWeek: 'WEDNESDAY', label: 'Wednesday' },
+  { dayOfWeek: 'THURSDAY', label: 'Thursday' },
+  { dayOfWeek: 'FRIDAY', label: 'Friday' },
+  { dayOfWeek: 'SATURDAY', label: 'Saturday' },
+  { dayOfWeek: 'SUNDAY', label: 'Sunday' },
+]
+
+const formatBusinessHoursRange = (openTime: string | null, closeTime: string | null, isClosed: boolean) => {
+  if (isClosed || !openTime || !closeTime) {
+    return 'Closed'
+  }
+
+  return `${openTime.slice(0, 5)} - ${closeTime.slice(0, 5)}`
+}
+
+const getBusinessDayOfWeekInTimezone = (timezone: string): BusinessDayOfWeek => {
+  const weekdayName = new Intl.DateTimeFormat('en-GB', {
+    timeZone: timezone,
+    weekday: 'long',
+  })
+    .format(new Date())
+    .toUpperCase()
+
+  switch (weekdayName) {
+    case 'MONDAY':
+      return 'MONDAY'
+    case 'TUESDAY':
+      return 'TUESDAY'
+    case 'WEDNESDAY':
+      return 'WEDNESDAY'
+    case 'THURSDAY':
+      return 'THURSDAY'
+    case 'FRIDAY':
+      return 'FRIDAY'
+    case 'SATURDAY':
+      return 'SATURDAY'
+    default:
+      return 'SUNDAY'
+  }
+}
+
+const getCurrentClockInTimezone = (timezone: string) =>
+  new Intl.DateTimeFormat('en-GB', {
+    timeZone: timezone,
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(new Date())
 
 export default function BusinessDetailsClient({ slug }: { slug: string }) {
   const { detail, isLoading, errorMessage } = useDiscoveryBusinessDetail(slug)
@@ -83,7 +137,22 @@ export default function BusinessDetailsClient({ slug }: { slug: string }) {
   }
 
   const { business, services, staffMembers } = detail
-  const heroImage = heroImages[business.category] ?? heroImages.ETC
+  const heroImage = getBusinessCoverUrl(detail.media) ?? heroImages[business.category] ?? heroImages.ETC
+  const logoMediaUrl = getBusinessLogoUrl(detail.media)
+  const galleryMedia = getBusinessGallery(detail.media)
+  const businessHoursByDay = new Map(
+    detail.businessHours.map((businessHour) => [businessHour.dayOfWeek, businessHour])
+  )
+  const todayBusinessHours = businessHoursByDay.get(getBusinessDayOfWeekInTimezone(business.timezone))
+  const currentClock = getCurrentClockInTimezone(business.timezone)
+  const isOpenNow = Boolean(
+    todayBusinessHours &&
+      !todayBusinessHours.isClosed &&
+      todayBusinessHours.openTime &&
+      todayBusinessHours.closeTime &&
+      currentClock >= todayBusinessHours.openTime.slice(0, 5) &&
+      currentClock < todayBusinessHours.closeTime.slice(0, 5)
+  )
 
   return (
     <div className="min-h-screen bg-slate-50 pb-16 md:pb-0">
@@ -103,7 +172,17 @@ export default function BusinessDetailsClient({ slug }: { slug: string }) {
       <div className="max-w-4xl mx-auto px-4 -mt-24 relative z-10">
         <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
           <div className="flex justify-between items-start gap-4 mb-4">
-            <div>
+            <div className="flex items-start gap-4">
+              {logoMediaUrl ? (
+                <div className="relative h-20 w-20 overflow-hidden rounded-3xl border border-white/70 bg-white shadow-sm">
+                  <Image src={logoMediaUrl} alt={`${business.name} logo`} fill className="object-contain p-3" />
+                </div>
+              ) : (
+                <div className="flex h-20 w-20 items-center justify-center rounded-3xl border border-white/70 bg-white text-xl font-black text-[#0B1C30] shadow-sm">
+                  {getInitials(business.name)}
+                </div>
+              )}
+              <div>
               <span className="inline-flex rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-white">
                 {formatCategoryLabel(business.category)}
               </span>
@@ -112,6 +191,7 @@ export default function BusinessDetailsClient({ slug }: { slug: string }) {
                 <span>{business.city}, {business.postcode}</span>
                 <span>Timezone: {business.timezone}</span>
                 <span>{services.length} service{services.length === 1 ? '' : 's'}</span>
+              </div>
               </div>
             </div>
           </div>
@@ -141,8 +221,16 @@ export default function BusinessDetailsClient({ slug }: { slug: string }) {
               </div>
               <div>
                 <p className="font-semibold text-slate-900 text-sm uppercase tracking-wide text-slate-600">Availability</p>
-                <p className="text-slate-900">Bookable slots are shown per service and staff member.</p>
-                <p className="text-slate-600 text-sm">Select a service to see live availability.</p>
+                <p className="text-slate-900">{isOpenNow ? 'Open now' : 'Closed now'}</p>
+                <p className="text-slate-600 text-sm">
+                  {todayBusinessHours
+                    ? formatBusinessHoursRange(
+                        todayBusinessHours.openTime,
+                        todayBusinessHours.closeTime,
+                        todayBusinessHours.isClosed
+                      )
+                    : 'Business hours not configured yet'}
+                </p>
               </div>
             </div>
 
@@ -166,6 +254,59 @@ export default function BusinessDetailsClient({ slug }: { slug: string }) {
               </p>
             </div>
           </div>
+
+          <div className="mt-6 border-t pt-6">
+            <p className="font-semibold text-slate-900 text-sm uppercase tracking-wide text-slate-600 mb-3">
+              Business Hours
+            </p>
+            <div className="grid gap-3 md:grid-cols-2">
+              {BUSINESS_HOURS_ROWS.map((row) => {
+                const businessHour = businessHoursByDay.get(row.dayOfWeek)
+                return (
+                  <div
+                    key={row.dayOfWeek}
+                    className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"
+                  >
+                    <span className="text-sm font-semibold text-[#0B1C30]">{row.label}</span>
+                    <span
+                      className={`text-sm ${
+                        businessHour?.isClosed ? 'font-medium text-slate-400' : 'font-semibold text-slate-700'
+                      }`}
+                    >
+                      {formatBusinessHoursRange(
+                        businessHour?.openTime ?? null,
+                        businessHour?.closeTime ?? null,
+                        businessHour?.isClosed ?? true
+                      )}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {galleryMedia.length ? (
+            <div className="mt-6 border-t pt-6">
+              <p className="font-semibold text-slate-900 text-sm uppercase tracking-wide text-slate-600 mb-3">
+                Gallery
+              </p>
+              <div className="grid gap-4 md:grid-cols-3">
+                {galleryMedia.map((mediaItem, index) => (
+                  <div
+                    key={mediaItem.id}
+                    className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-slate-200 bg-slate-100"
+                  >
+                    <Image
+                      src={mediaItem.url}
+                      alt={`${business.name} gallery image ${index + 1}`}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
         </div>
 
         <div className="mb-8">

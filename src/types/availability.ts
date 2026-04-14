@@ -3,7 +3,15 @@ export interface BackendAvailabilitySlotResponse {
   staff_member_display_name: string
   start_at: string
   end_at: string
+  status?: AvailabilitySlotStatus
 }
+
+export type AvailabilitySlotStatus =
+  | 'AVAILABLE'
+  | 'BOOKED'
+  | 'UNAVAILABLE'
+  | 'RESOURCE_BLOCKED'
+  | 'PAST'
 
 export interface BackendAvailabilityResponse {
   business_id: string
@@ -12,6 +20,7 @@ export interface BackendAvailabilityResponse {
   timezone: string
   duration_minutes: number
   slots: BackendAvailabilitySlotResponse[]
+  timeline_slots?: BackendAvailabilitySlotResponse[]
 }
 
 export interface AvailabilitySlot {
@@ -19,6 +28,7 @@ export interface AvailabilitySlot {
   staffMemberDisplayName: string
   startAt: string
   endAt: string
+  status: AvailabilitySlotStatus
 }
 
 export interface Availability {
@@ -28,6 +38,7 @@ export interface Availability {
   timezone: string
   durationMinutes: number
   slots: AvailabilitySlot[]
+  timelineSlots: AvailabilitySlot[]
 }
 
 export interface AvailabilityResponse {

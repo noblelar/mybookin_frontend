@@ -9,13 +9,11 @@ import CustomerTopBar from '@/components/customer/CustomerTopBar'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { useDiscoveryBusinessDetail } from '@/hooks/useDiscoveryBusinessDetail'
 import { buildLoginRedirectPath } from '@/lib/auth'
+import { getBusinessCoverUrl, getBusinessLogoUrl } from '@/lib/media'
 import { formatCurrency, formatDurationLabel, getApiErrorMessage } from '@/lib/utils'
 import { useAuthContext } from '@/context/AuthContext'
 import type { ApiErrorResponse } from '@/types/auth'
 import type { BookingMutationResponse } from '@/types/booking'
-
-const serviceImage =
-  'https://api.builder.io/api/v1/image/assets/TEMP/d508ac7f547631f26d8bd728c36d889f72ae660e?width=400'
 
 const staffImages = [
   'https://api.builder.io/api/v1/image/assets/TEMP/b1300631cb29f01d963d09791de71f8683dafad9?width=150',
@@ -170,6 +168,8 @@ function CheckoutPageContent({
       ? selectedService.depositAmount
       : null
   const canAttemptConfirmation = hasHydrated && !isSubmitting
+  const businessCoverImage = getBusinessCoverUrl(detail.media)
+  const businessLogoImage = getBusinessLogoUrl(detail.media)
 
   return (
     <div className="min-h-screen bg-[#EFF4FF]">
@@ -199,8 +199,8 @@ function CheckoutPageContent({
             <div className="flex items-center gap-4 bg-white border border-slate-200 p-4 shadow-sm rounded-[20px]">
               <div className="w-20 h-20 flex-shrink-0 overflow-hidden bg-slate-100 rounded-2xl">
                 <Image
-                  src={serviceImage}
-                  alt={selectedService.name}
+                  src={businessCoverImage ?? businessLogoImage ?? getStaffImage(selectedStaff.id)}
+                  alt={detail.business.name}
                   width={80}
                   height={80}
                   className="w-full h-full object-cover"

@@ -6,6 +6,7 @@ import { Suspense, useEffect, useMemo, useState } from 'react'
 
 import ManageBusinessShell from '@/components/manage_business/ManageBusinessShell'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { buildBookingsSubNavItems } from '@/components/manage_business/workspace/bookings-navigation'
 import { getApiErrorMessage } from '@/lib/utils'
 import type { ApiErrorResponse } from '@/types/auth'
 import type {
@@ -461,7 +462,11 @@ function ManageBusinessBookingsPageContent() {
   const canMarkNoShow = selectedBooking?.status === 'CONFIRMED'
 
   return (
-    <ManageBusinessShell activeNav="/manage_business/bookings" topBarTab="reports">
+    <ManageBusinessShell
+      activeNav="/manage_business/bookings"
+      subNavItems={buildBookingsSubNavItems(selectedBusiness?.id ?? null)}
+      activeSubNav={pathname}
+    >
       {errorMessage ? (
         <Alert variant="destructive" className="mb-6 rounded-2xl">
           <AlertTitle>Bookings workspace issue</AlertTitle>

@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { Suspense, useEffect, useMemo, useState } from 'react'
 
 import ManageBusinessShell from '@/components/manage_business/ManageBusinessShell'
+import { buildDashboardSubNavItems } from '@/components/manage_business/workspace/dashboard-navigation'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import type { ApiErrorResponse } from '@/types/auth'
 import type { Booking, BusinessBookingsResponse } from '@/types/booking'
@@ -268,7 +269,11 @@ function ManageBusinessDashboardPageContent() {
     : []
 
   return (
-    <ManageBusinessShell activeNav="/manage_business">
+    <ManageBusinessShell
+      activeNav="/manage_business"
+      subNavItems={buildDashboardSubNavItems(selectedBusiness?.id ?? null)}
+      activeSubNav={pathname}
+    >
       {errorMessage ? (
         <Alert variant="destructive" className="mb-6 rounded-2xl">
           <AlertTitle>Owner workspace issue</AlertTitle>

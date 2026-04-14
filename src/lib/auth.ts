@@ -13,6 +13,18 @@ export type AccessMap = {
 
 export const routeAccessMap: AccessMap[] = [
   {
+    prefix: '/admin/subscriptions',
+    cookieName: AUTH_COOKIE_NAME,
+    allowedRoles: ['SUPER_ADMIN'],
+    extractAccessToken: true,
+  },
+  {
+    prefix: '/admin/users',
+    cookieName: AUTH_COOKIE_NAME,
+    allowedRoles: ['SUPER_ADMIN'],
+    extractAccessToken: true,
+  },
+  {
     prefix: '/admin',
     cookieName: AUTH_COOKIE_NAME,
     allowedRoles: ['ADMIN', 'SUPER_ADMIN'],

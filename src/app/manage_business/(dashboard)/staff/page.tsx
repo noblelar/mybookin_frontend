@@ -6,9 +6,17 @@ import { Suspense, useEffect, useMemo, useState, type FormEvent } from 'react'
 
 import ManageBusinessShell from '@/components/manage_business/ManageBusinessShell'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { buildStaffSubNavItems } from '@/components/manage_business/workspace/staff-navigation'
+import { getCurrentDateInTimeZone } from '@/lib/utils'
 import type { Availability, AvailabilityResponse } from '@/types/availability'
 import type { ApiErrorResponse } from '@/types/auth'
-import type { Business, BusinessListResponse } from '@/types/business'
+import type {
+  Business,
+  BusinessDayOfWeek,
+  BusinessHoursDay,
+  BusinessHoursResponse,
+  BusinessListResponse,
+} from '@/types/business'
 import type { Service, ServiceListResponse } from '@/types/service'
 import type {
   OnboardStaffSuccessResponse,
@@ -50,21 +58,75 @@ const getApiErrorMessage = (payload: unknown, fallback: string) => {
   return fallback
 }
 
-const buildTodayDate = () => new Date().toISOString().slice(0, 10)
+const buildTodayDate = () =>
+  getCurrentDateInTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC')
+
+const BUSINESS_DAY_OF_WEEK_VALUES: BusinessDayOfWeek[] = [
+  'SUNDAY',
+  'MONDAY',
+  'TUESDAY',
+  'WEDNESDAY',
+  'THURSDAY',
+  'FRIDAY',
+  'SATURDAY',
+]
+
+const DEFAULT_BUSINESS_HOURS: BusinessHoursDay[] = [
+  'MONDAY',
+  'TUESDAY',
+  'WEDNESDAY',
+  'THURSDAY',
+  'FRIDAY',
+  'SATURDAY',
+  'SUNDAY',
+].map((dayOfWeek, index) => ({
+  id: `default-${index}`,
+  businessId: '',
+  dayOfWeek: dayOfWeek as BusinessDayOfWeek,
+  openTime: null,
+  closeTime: null,
+  isClosed: true,
+}))
+
+const getBusinessDayOfWeekFromDate = (value: string): BusinessDayOfWeek => {
+  const [year, month, day] = value.split('-').map(Number)
+  const date = new Date(Date.UTC(year, month - 1, day))
+  return BUSINESS_DAY_OF_WEEK_VALUES[date.getUTCDay()] ?? 'SUNDAY'
+}
+
+const addDaysToDateString = (value: string, daysToAdd: number) => {
+  const [year, month, day] = value.split('-').map(Number)
+  const date = new Date(Date.UTC(year, month - 1, day))
+  date.setUTCDate(date.getUTCDate() + daysToAdd)
+  return date.toISOString().slice(0, 10)
+}
+
+const getWeekStartDate = (anchorDate: string) => {
+  const offsets: Record<BusinessDayOfWeek, number> = {
+    SUNDAY: -6,
+    MONDAY: 0,
+    TUESDAY: -1,
+    WEDNESDAY: -2,
+    THURSDAY: -3,
+    FRIDAY: -4,
+    SATURDAY: -5,
+  }
+
+  return addDaysToDateString(anchorDate, offsets[getBusinessDayOfWeekFromDate(anchorDate)] ?? 0)
+}
 
 const buildWeek = (anchorDate: string) => {
-  const date = new Date(`${anchorDate}T00:00:00`)
-  const day = date.getDay()
-  const mondayOffset = day === 0 ? -6 : 1 - day
-  date.setDate(date.getDate() + mondayOffset)
+  const weekStartDate = getWeekStartDate(anchorDate)
 
   return Array.from({ length: 7 }).map((_, index) => {
-    const currentDate = new Date(date)
-    currentDate.setDate(date.getDate() + index)
+    const dateString = addDaysToDateString(weekStartDate, index)
+    const currentDate = new Date(`${dateString}T12:00:00Z`)
+
     return {
-      key: currentDate.toISOString().slice(0, 10),
-      label: currentDate.toLocaleDateString('en-GB', { weekday: 'short' }).toUpperCase(),
-      dateNumber: currentDate.getDate(),
+      key: dateString,
+      label: currentDate.toLocaleDateString('en-GB', { weekday: 'short', timeZone: 'UTC' }).toUpperCase(),
+      dateNumber: currentDate.getUTCDate(),
+      dayOfWeek: getBusinessDayOfWeekFromDate(dateString),
     }
   })
 }
@@ -135,6 +197,40 @@ const formatSlotTime = (value: string, timezone: string) => {
   }).format(date)
 }
 
+const getAvailabilityStatusClassName = (status: Availability['timelineSlots'][number]['status']) => {
+  switch (status) {
+    case 'AVAILABLE':
+      return 'bg-emerald-50 text-emerald-700'
+    case 'BOOKED':
+      return 'bg-rose-50 text-rose-700'
+    case 'UNAVAILABLE':
+      return 'bg-amber-50 text-amber-700'
+    case 'RESOURCE_BLOCKED':
+      return 'bg-cyan-50 text-cyan-700'
+    case 'PAST':
+      return 'bg-slate-100 text-slate-600'
+    default:
+      return 'bg-slate-100 text-slate-600'
+  }
+}
+
+const getAvailabilityStatusLabel = (status: Availability['timelineSlots'][number]['status']) => {
+  switch (status) {
+    case 'AVAILABLE':
+      return 'Available'
+    case 'BOOKED':
+      return 'Booked'
+    case 'UNAVAILABLE':
+      return 'Unavailable'
+    case 'RESOURCE_BLOCKED':
+      return 'Resource blocked'
+    case 'PAST':
+      return 'Past'
+    default:
+      return status
+  }
+}
+
 const toIsoStringFromLocalInput = (value: string) => {
   const date = new Date(value)
   return Number.isNaN(date.getTime()) ? null : date.toISOString()
@@ -171,6 +267,7 @@ function ManageBusinessStaffPageContent() {
   const selectedBusinessId = searchParams.get('businessId')
 
   const [businesses, setBusinesses] = useState<Business[]>([])
+  const [businessHours, setBusinessHours] = useState<BusinessHoursDay[]>(DEFAULT_BUSINESS_HOURS)
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([])
   const [services, setServices] = useState<Service[]>([])
   const [invitations, setInvitations] = useState<StaffInvitation[]>([])
@@ -183,6 +280,7 @@ function ManageBusinessStaffPageContent() {
   const [availability, setAvailability] = useState<Availability | null>(null)
   const [isLoadingBusinesses, setIsLoadingBusinesses] = useState(true)
   const [isLoadingWorkspace, setIsLoadingWorkspace] = useState(false)
+  const [isLoadingBusinessHours, setIsLoadingBusinessHours] = useState(false)
   const [isLoadingAssignments, setIsLoadingAssignments] = useState(false)
   const [isLoadingSchedule, setIsLoadingSchedule] = useState(false)
   const [isLoadingAvailability, setIsLoadingAvailability] = useState(false)
@@ -216,6 +314,10 @@ function ManageBusinessStaffPageContent() {
     () => businesses.find((business) => business.id === selectedBusinessId) ?? businesses[0] ?? null,
     [businesses, selectedBusinessId]
   )
+  const businessHoursByDay = useMemo(
+    () => new Map(businessHours.map((day) => [day.dayOfWeek, day])),
+    [businessHours]
+  )
 
   const selectedStaff = useMemo(
     () => staffMembers.find((staffMember) => staffMember.id === selectedStaffId) ?? staffMembers[0] ?? null,
@@ -226,8 +328,20 @@ function ManageBusinessStaffPageContent() {
     () => services.find((service) => service.id === selectedServiceId) ?? services[0] ?? null,
     [selectedServiceId, services]
   )
+  const previewSlots = availability?.timelineSlots.length ? availability.timelineSlots : availability?.slots ?? []
+  const previewTimezone = availability?.timezone ?? selectedBusiness?.timezone ?? 'UTC'
+  const previewDurationMinutes = availability?.durationMinutes ?? selectedService?.durationMinutes ?? 0
 
   const weekDays = useMemo(() => buildWeek(weekAnchorDate), [weekAnchorDate])
+  const selectedShiftBusinessHours = useMemo(
+    () => businessHoursByDay.get(getBusinessDayOfWeekFromDate(shiftDate)) ?? null,
+    [businessHoursByDay, shiftDate]
+  )
+  const isSelectedShiftDayClosed = selectedShiftBusinessHours?.isClosed ?? false
+  const isAvailabilityDateClosed = useMemo(
+    () => businessHoursByDay.get(getBusinessDayOfWeekFromDate(availabilityDate))?.isClosed ?? false,
+    [availabilityDate, businessHoursByDay]
+  )
 
   const pendingInvitations = useMemo(
     () => invitations.filter((invitation) => invitation.status.toUpperCase() === 'PENDING'),
@@ -254,6 +368,61 @@ function ManageBusinessStaffPageContent() {
 
   const businessScopedHref = (href: string) =>
     selectedBusiness ? `${href}?businessId=${selectedBusiness.id}` : href
+
+  useEffect(() => {
+    if (!selectedBusiness?.timezone) return
+
+    const businessToday = getCurrentDateInTimeZone(selectedBusiness.timezone)
+    setAvailabilityDate(businessToday)
+    setWeekAnchorDate(businessToday)
+    setShiftDate(businessToday)
+    setTimeOffStartAt(buildLocalDateTime(businessToday, '09:00'))
+    setTimeOffEndAt(buildLocalDateTime(businessToday, '17:00'))
+  }, [selectedBusiness?.id, selectedBusiness?.timezone])
+
+  useEffect(() => {
+    if (!selectedBusinessId) {
+      setBusinessHours(DEFAULT_BUSINESS_HOURS)
+      return
+    }
+
+    let ignore = false
+
+    async function loadBusinessHours() {
+      setIsLoadingBusinessHours(true)
+
+      try {
+        const response = await fetch(`/api/businesses/${selectedBusinessId}/hours`, {
+          method: 'GET',
+          cache: 'no-store',
+        })
+
+        const payload = (await response.json()) as BusinessHoursResponse | ApiErrorResponse
+        if (ignore) return
+
+        if (!response.ok) {
+          setErrorMessage(getApiErrorMessage(payload, 'We could not load business hours right now.'))
+          setBusinessHours(DEFAULT_BUSINESS_HOURS)
+          return
+        }
+
+        setBusinessHours((payload as BusinessHoursResponse).hours)
+      } catch {
+        if (!ignore) {
+          setErrorMessage('We could not load business hours right now.')
+          setBusinessHours(DEFAULT_BUSINESS_HOURS)
+        }
+      } finally {
+        if (!ignore) setIsLoadingBusinessHours(false)
+      }
+    }
+
+    void loadBusinessHours()
+
+    return () => {
+      ignore = true
+    }
+  }, [selectedBusinessId])
 
   useEffect(() => {
     let ignore = false
@@ -531,7 +700,7 @@ function ManageBusinessStaffPageContent() {
   }, [selectedBusinessId, selectedStaff])
 
   useEffect(() => {
-    if (!selectedBusinessId || !selectedService || !selectedStaff) {
+    if (!selectedBusinessId || !selectedService || !selectedStaff || isAvailabilityDateClosed) {
       setAvailability(null)
       return
     }
@@ -572,7 +741,7 @@ function ManageBusinessStaffPageContent() {
     return () => {
       ignore = true
     }
-  }, [availabilityDate, selectedBusinessId, selectedService, selectedStaff])
+  }, [availabilityDate, isAvailabilityDateClosed, selectedBusinessId, selectedService, selectedStaff])
 
   const updateSelectedBusinessId = (businessId: string) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -940,7 +1109,11 @@ function ManageBusinessStaffPageContent() {
   }
 
   return (
-    <ManageBusinessShell activeNav="/manage_business/staff">
+    <ManageBusinessShell
+      activeNav="/manage_business/staff"
+      subNavItems={buildStaffSubNavItems(selectedBusiness?.id ?? null)}
+      activeSubNav={pathname}
+    >
       {errorMessage ? (
         <Alert variant="destructive" className="mb-6 rounded-2xl">
           <AlertTitle>Staff workspace issue</AlertTitle>
@@ -1441,13 +1614,19 @@ function ManageBusinessStaffPageContent() {
                       <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-6 text-sm text-slate-500">
                         Checking availability...
                       </div>
-                    ) : !availability?.slots.length ? (
+                    ) : isAvailabilityDateClosed ? (
+                      <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-6 text-sm text-slate-500">
+                        This business is closed on the selected date, so no customer-facing slots can
+                        be generated.
+                      </div>
+                    ) : !previewSlots.length ? (
                       <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-6 text-sm text-slate-500">
                         No slots were generated for this service-staff pair on the selected date.
-                        Check shifts, time off, and service assignments.
+                        Check shifts, business hours, time off, pooled resource capacity, existing
+                        bookings, or whether the day is already in the past.
                       </div>
                     ) : (
-                      availability.slots.slice(0, 8).map((slot) => (
+                      previewSlots.slice(0, 12).map((slot) => (
                         <div
                           key={`${slot.staffMemberId}-${slot.startAt}`}
                           className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"
@@ -1457,13 +1636,22 @@ function ManageBusinessStaffPageContent() {
                               {slot.staffMemberDisplayName}
                             </p>
                             <p className="mt-1 text-xs text-slate-500">
-                              {formatSlotTime(slot.startAt, availability.timezone)} -{' '}
-                              {formatSlotTime(slot.endAt, availability.timezone)}
+                              {formatSlotTime(slot.startAt, previewTimezone)} -{' '}
+                              {formatSlotTime(slot.endAt, previewTimezone)}
                             </p>
                           </div>
-                          <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
-                            {availability.durationMinutes} min
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`inline-flex rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${getAvailabilityStatusClassName(
+                                slot.status
+                              )}`}
+                            >
+                              {getAvailabilityStatusLabel(slot.status)}
+                            </span>
+                            <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
+                              {previewDurationMinutes} min
+                            </span>
+                          </div>
                         </div>
                       ))
                     )}
@@ -1496,29 +1684,42 @@ function ManageBusinessStaffPageContent() {
               {selectedStaff ? (
                 <div className="mt-5 grid gap-5">
                   <div className="grid gap-2 sm:grid-cols-7">
-                    {weekDays.map((weekDay) => (
-                      <button
-                        type="button"
-                        key={weekDay.key}
-                        onClick={() => {
-                          setWeekAnchorDate(weekDay.key)
-                          setShiftDate(weekDay.key)
-                        }}
-                        className={`rounded-2xl border px-3 py-3 text-left transition-colors ${
-                          shiftDate === weekDay.key
-                            ? 'border-[#0B1C30] bg-slate-50'
-                            : 'border-slate-200 bg-white hover:bg-slate-50'
-                        }`}
-                      >
-                        <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
-                          {weekDay.label}
-                        </p>
-                        <p className="mt-2 text-lg font-bold text-[#0B1C30]">{weekDay.dateNumber}</p>
-                        <p className="mt-1 text-xs text-slate-500">
-                          {shiftsByDay.get(weekDay.key) ?? 0} shifts
-                        </p>
-                      </button>
-                    ))}
+                    {weekDays.map((weekDay) => {
+                      const businessDay = businessHoursByDay.get(weekDay.dayOfWeek)
+                      const isClosed = businessDay?.isClosed ?? false
+                      const openTime = businessDay?.openTime?.slice(0, 5) ?? null
+                      const closeTime = businessDay?.closeTime?.slice(0, 5) ?? null
+
+                      return (
+                        <button
+                          type="button"
+                          key={weekDay.key}
+                          onClick={() => {
+                            setWeekAnchorDate(weekDay.key)
+                            setShiftDate(weekDay.key)
+                          }}
+                          className={`rounded-2xl border px-3 py-3 text-left transition-colors ${
+                            shiftDate === weekDay.key
+                              ? 'border-[#0B1C30] bg-slate-50'
+                              : isClosed
+                                ? 'border-slate-200 bg-slate-50 text-slate-400 hover:bg-slate-50'
+                                : 'border-slate-200 bg-white hover:bg-slate-50'
+                          }`}
+                        >
+                          <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
+                            {weekDay.label}
+                          </p>
+                          <p className="mt-2 text-lg font-bold text-[#0B1C30]">{weekDay.dateNumber}</p>
+                          <p className="mt-1 text-xs text-slate-500">
+                            {isClosed
+                              ? 'Closed'
+                              : openTime && closeTime
+                                ? `${openTime} - ${closeTime}`
+                                : `${shiftsByDay.get(weekDay.key) ?? 0} shifts`}
+                          </p>
+                        </button>
+                      )
+                    })}
                   </div>
 
                   <form onSubmit={handleCreateShift} className="grid gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 lg:grid-cols-4">
@@ -1536,8 +1737,9 @@ function ManageBusinessStaffPageContent() {
                       <input
                         type="time"
                         value={shiftStartTime}
+                        disabled={isSelectedShiftDayClosed || isLoadingBusinessHours}
                         onChange={(event) => setShiftStartTime(event.target.value)}
-                        className="h-11 rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-[#0B1C30]"
+                        className="h-11 rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-[#0B1C30] disabled:cursor-not-allowed disabled:opacity-60"
                       />
                     </label>
                     <label className="grid gap-2 text-sm font-medium text-slate-700">
@@ -1545,8 +1747,9 @@ function ManageBusinessStaffPageContent() {
                       <input
                         type="time"
                         value={shiftEndTime}
+                        disabled={isSelectedShiftDayClosed || isLoadingBusinessHours}
                         onChange={(event) => setShiftEndTime(event.target.value)}
-                        className="h-11 rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-[#0B1C30]"
+                        className="h-11 rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-[#0B1C30] disabled:cursor-not-allowed disabled:opacity-60"
                       />
                     </label>
                     <div className="grid gap-3">
@@ -1554,6 +1757,7 @@ function ManageBusinessStaffPageContent() {
                         <input
                           type="checkbox"
                           checked={isOffShift}
+                          disabled={isSelectedShiftDayClosed || isLoadingBusinessHours}
                           onChange={(event) => setIsOffShift(event.target.checked)}
                           className="h-4 w-4 rounded border-slate-300 text-[#0B1C30] focus:ring-[#0B1C30]"
                         />
@@ -1561,13 +1765,24 @@ function ManageBusinessStaffPageContent() {
                       </label>
                       <button
                         type="submit"
-                        disabled={isSavingShift}
+                        disabled={isSavingShift || isSelectedShiftDayClosed || isLoadingBusinessHours}
                         className="inline-flex h-11 items-center justify-center rounded-full bg-[#0B1C30] px-5 text-sm font-semibold text-white transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
                       >
-                        {isSavingShift ? 'Saving...' : 'Add shift'}
+                        {isSavingShift
+                          ? 'Saving...'
+                          : isSelectedShiftDayClosed
+                            ? 'Business closed'
+                            : 'Add shift'}
                       </button>
                     </div>
                   </form>
+
+                  {isSelectedShiftDayClosed ? (
+                    <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+                      This day is marked closed in business hours, so new shifts cannot be added until
+                      the business is opened for that weekday.
+                    </div>
+                  ) : null}
 
                   <div className="grid gap-3">
                     {shifts.length ? (

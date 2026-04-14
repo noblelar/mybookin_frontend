@@ -6,9 +6,17 @@ import { Suspense, useEffect, useMemo, useState } from 'react'
 
 import ManageBusinessShell from '@/components/manage_business/ManageBusinessShell'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { buildServicesSubNavItems } from '@/components/manage_business/workspace/services-navigation'
+import { getCurrentDateInTimeZone } from '@/lib/utils'
 import type { Availability, AvailabilityResponse } from '@/types/availability'
 import type { ApiErrorResponse } from '@/types/auth'
-import type { Business, BusinessListResponse } from '@/types/business'
+import type {
+  Business,
+  BusinessDayOfWeek,
+  BusinessHoursDay,
+  BusinessHoursResponse,
+  BusinessListResponse,
+} from '@/types/business'
 import type {
   Service,
   ServiceCategory,
@@ -17,6 +25,13 @@ import type {
   ServiceListResponse,
   ServiceMutationResponse,
 } from '@/types/service'
+import type {
+  Resource,
+  ResourceListResponse,
+  ServiceResourceRule,
+  ServiceResourceRuleListResponse,
+  ServiceResourceRuleMutationResponse,
+} from '@/types/resource'
 import type { ServiceStaffAssignmentResponse, StaffMember } from '@/types/staff'
 
 const getApiErrorMessage = (payload: unknown, fallback: string) => {
@@ -58,6 +73,39 @@ const getStatusClassName = (status: string) => {
 
 const buildTodayDate = () => new Date().toISOString().slice(0, 10)
 
+const BUSINESS_DAY_OF_WEEK_VALUES: BusinessDayOfWeek[] = [
+  'SUNDAY',
+  'MONDAY',
+  'TUESDAY',
+  'WEDNESDAY',
+  'THURSDAY',
+  'FRIDAY',
+  'SATURDAY',
+]
+
+const DEFAULT_BUSINESS_HOURS: BusinessHoursDay[] = [
+  'MONDAY',
+  'TUESDAY',
+  'WEDNESDAY',
+  'THURSDAY',
+  'FRIDAY',
+  'SATURDAY',
+  'SUNDAY',
+].map((dayOfWeek, index) => ({
+  id: `default-${index}`,
+  businessId: '',
+  dayOfWeek: dayOfWeek as BusinessDayOfWeek,
+  openTime: null,
+  closeTime: null,
+  isClosed: true,
+}))
+
+const getBusinessDayOfWeekFromDate = (value: string): BusinessDayOfWeek => {
+  const [year, month, day] = value.split('-').map(Number)
+  const date = new Date(Date.UTC(year, month - 1, day))
+  return BUSINESS_DAY_OF_WEEK_VALUES[date.getUTCDay()] ?? 'SUNDAY'
+}
+
 const buildInitialServiceForm = (categoryId = '') => ({
   serviceCategoryId: categoryId,
   name: '',
@@ -79,6 +127,47 @@ const formatSlotTime = (value: string, timezone: string) => {
   }).format(date)
 }
 
+const getAvailabilityStatusClassName = (status: Availability['timelineSlots'][number]['status']) => {
+  switch (status) {
+    case 'AVAILABLE':
+      return 'bg-emerald-50 text-emerald-700'
+    case 'BOOKED':
+      return 'bg-rose-50 text-rose-700'
+    case 'UNAVAILABLE':
+      return 'bg-amber-50 text-amber-700'
+    case 'RESOURCE_BLOCKED':
+      return 'bg-cyan-50 text-cyan-700'
+    case 'PAST':
+      return 'bg-slate-100 text-slate-600'
+    default:
+      return 'bg-slate-100 text-slate-600'
+  }
+}
+
+const getAvailabilityStatusLabel = (status: Availability['timelineSlots'][number]['status']) => {
+  switch (status) {
+    case 'AVAILABLE':
+      return 'Available'
+    case 'BOOKED':
+      return 'Booked'
+    case 'UNAVAILABLE':
+      return 'Unavailable'
+    case 'RESOURCE_BLOCKED':
+      return 'Resource blocked'
+    case 'PAST':
+      return 'Past'
+    default:
+      return status
+  }
+}
+
+const formatResourceTypeLabel = (value: string) =>
+  value
+    .toLowerCase()
+    .split('_')
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join(' ')
+
 function ManageBusinessServicesPageContent() {
   const router = useRouter()
   const pathname = usePathname()
@@ -86,14 +175,19 @@ function ManageBusinessServicesPageContent() {
   const selectedBusinessId = searchParams.get('businessId')
 
   const [businesses, setBusinesses] = useState<Business[]>([])
+  const [businessHours, setBusinessHours] = useState<BusinessHoursDay[]>(DEFAULT_BUSINESS_HOURS)
   const [categories, setCategories] = useState<ServiceCategory[]>([])
   const [services, setServices] = useState<Service[]>([])
+  const [resources, setResources] = useState<Resource[]>([])
   const [assignedStaff, setAssignedStaff] = useState<StaffMember[]>([])
+  const [serviceResourceRules, setServiceResourceRules] = useState<ServiceResourceRule[]>([])
   const [availability, setAvailability] = useState<Availability | null>(null)
   const [isLoadingBusinesses, setIsLoadingBusinesses] = useState(true)
   const [isLoadingWorkspace, setIsLoadingWorkspace] = useState(false)
+  const [isLoadingResourceRules, setIsLoadingResourceRules] = useState(false)
   const [isSavingCategory, setIsSavingCategory] = useState(false)
   const [isSavingService, setIsSavingService] = useState(false)
+  const [isSavingResourceRules, setIsSavingResourceRules] = useState(false)
   const [isUpdatingServiceId, setIsUpdatingServiceId] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
@@ -103,16 +197,70 @@ function ManageBusinessServicesPageContent() {
   const [serviceForm, setServiceForm] = useState(buildInitialServiceForm())
   const [availabilityDate, setAvailabilityDate] = useState(buildTodayDate())
   const [availabilityStaffId, setAvailabilityStaffId] = useState('ALL')
+  const [resourceRuleDraft, setResourceRuleDraft] = useState<Record<string, string>>({})
 
   const selectedBusiness = useMemo(
     () => businesses.find((business) => business.id === selectedBusinessId) ?? businesses[0] ?? null,
     [businesses, selectedBusinessId]
+  )
+  const businessHoursByDay = useMemo(
+    () => new Map(businessHours.map((day) => [day.dayOfWeek, day])),
+    [businessHours]
   )
 
   const selectedService = useMemo(
     () => services.find((service) => service.id === selectedServiceId) ?? services[0] ?? null,
     [services, selectedServiceId]
   )
+  const previewSlots = availability?.timelineSlots.length ? availability.timelineSlots : availability?.slots ?? []
+  const previewTimezone = availability?.timezone ?? selectedBusiness?.timezone ?? 'UTC'
+  const previewDurationMinutes = availability?.durationMinutes ?? selectedService?.durationMinutes ?? 0
+  const isAvailabilityDateClosed = useMemo(
+    () => businessHoursByDay.get(getBusinessDayOfWeekFromDate(availabilityDate))?.isClosed ?? false,
+    [availabilityDate, businessHoursByDay]
+  )
+
+  useEffect(() => {
+    if (!selectedBusiness?.timezone) return
+
+    setAvailabilityDate(getCurrentDateInTimeZone(selectedBusiness.timezone))
+  }, [selectedBusiness?.id, selectedBusiness?.timezone])
+
+  useEffect(() => {
+    if (!selectedBusinessId) {
+      setBusinessHours(DEFAULT_BUSINESS_HOURS)
+      return
+    }
+
+    let ignore = false
+
+    async function loadBusinessHours() {
+      try {
+        const response = await fetch(`/api/businesses/${selectedBusinessId}/hours`, {
+          method: 'GET',
+          cache: 'no-store',
+        })
+
+        const payload = (await response.json()) as BusinessHoursResponse | ApiErrorResponse
+        if (ignore) return
+
+        if (!response.ok) {
+          setBusinessHours(DEFAULT_BUSINESS_HOURS)
+          return
+        }
+
+        setBusinessHours((payload as BusinessHoursResponse).hours)
+      } catch {
+        if (!ignore) setBusinessHours(DEFAULT_BUSINESS_HOURS)
+      }
+    }
+
+    void loadBusinessHours()
+
+    return () => {
+      ignore = true
+    }
+  }, [selectedBusinessId])
 
   useEffect(() => {
     let ignore = false
@@ -167,6 +315,9 @@ function ManageBusinessServicesPageContent() {
     if (!selectedBusinessId) {
       setCategories([])
       setServices([])
+      setResources([])
+      setServiceResourceRules([])
+      setResourceRuleDraft({})
       return
     }
 
@@ -177,7 +328,7 @@ function ManageBusinessServicesPageContent() {
       setErrorMessage(null)
 
       try {
-        const [categoriesResponse, servicesResponse] = await Promise.all([
+        const [categoriesResponse, servicesResponse, resourcesResponse] = await Promise.all([
           fetch(`/api/businesses/${selectedBusinessId}/service-categories`, {
             method: 'GET',
             cache: 'no-store',
@@ -186,11 +337,16 @@ function ManageBusinessServicesPageContent() {
             method: 'GET',
             cache: 'no-store',
           }),
+          fetch(`/api/businesses/${selectedBusinessId}/resources?include_inactive=true`, {
+            method: 'GET',
+            cache: 'no-store',
+          }),
         ])
 
-        const [categoriesPayload, servicesPayload] = await Promise.all([
+        const [categoriesPayload, servicesPayload, resourcesPayload] = await Promise.all([
           categoriesResponse.json(),
           servicesResponse.json(),
+          resourcesResponse.json(),
         ])
 
         if (ignore) return
@@ -212,22 +368,29 @@ function ManageBusinessServicesPageContent() {
         if (!servicesResponse.ok) {
           setErrorMessage(getApiErrorMessage(servicesPayload, 'We could not load services right now.'))
           setServices([])
-          return
+        } else {
+          const nextServices = (servicesPayload as ServiceListResponse).services
+          setServices(nextServices)
+          setSelectedServiceId((currentValue) => {
+            if (currentValue && nextServices.some((service) => service.id === currentValue)) {
+              return currentValue
+            }
+            return nextServices[0]?.id ?? null
+          })
         }
 
-        const nextServices = (servicesPayload as ServiceListResponse).services
-        setServices(nextServices)
-        setSelectedServiceId((currentValue) => {
-          if (currentValue && nextServices.some((service) => service.id === currentValue)) {
-            return currentValue
-          }
-          return nextServices[0]?.id ?? null
-        })
+        if (!resourcesResponse.ok) {
+          setErrorMessage(getApiErrorMessage(resourcesPayload, 'We could not load resources right now.'))
+          setResources([])
+        } else {
+          setResources((resourcesPayload as ResourceListResponse).resources)
+        }
       } catch {
         if (!ignore) {
           setErrorMessage('We could not load the services workspace right now.')
           setCategories([])
           setServices([])
+          setResources([])
         }
       } finally {
         if (!ignore) setIsLoadingWorkspace(false)
@@ -244,6 +407,8 @@ function ManageBusinessServicesPageContent() {
   useEffect(() => {
     if (!selectedBusinessId || !selectedService) {
       setAssignedStaff([])
+      setServiceResourceRules([])
+      setResourceRuleDraft({})
       setAvailability(null)
       return
     }
@@ -252,25 +417,22 @@ function ManageBusinessServicesPageContent() {
 
     async function loadSelectedServiceContext() {
       try {
-        const availabilityQuery = new URLSearchParams({ date: availabilityDate })
-        if (availabilityStaffId !== 'ALL') {
-          availabilityQuery.set('staff_member_id', availabilityStaffId)
-        }
+        setIsLoadingResourceRules(true)
 
-        const [staffResponse, availabilityResponse] = await Promise.all([
+        const [staffResponse, rulesResponse] = await Promise.all([
           fetch(
             `/api/businesses/${selectedBusinessId}/services/${selectedService.id}/staff-members?include_inactive=true`,
             { method: 'GET', cache: 'no-store' }
           ),
           fetch(
-            `/api/businesses/${selectedBusinessId}/services/${selectedService.id}/availability?${availabilityQuery.toString()}`,
+            `/api/businesses/${selectedBusinessId}/services/${selectedService.id}/resource-rules`,
             { method: 'GET', cache: 'no-store' }
           ),
         ])
 
-        const [staffPayload, availabilityPayload] = await Promise.all([
+        const [staffPayload, rulesPayload] = await Promise.all([
           staffResponse.json(),
-          availabilityResponse.json(),
+          rulesResponse.json(),
         ])
 
         if (ignore) return
@@ -282,6 +444,42 @@ function ManageBusinessServicesPageContent() {
           setAssignedStaff((staffPayload as ServiceStaffAssignmentResponse).staffMembers)
         }
 
+        if (!rulesResponse.ok) {
+          setErrorMessage(getApiErrorMessage(rulesPayload, 'We could not load resource rules right now.'))
+          setServiceResourceRules([])
+          setResourceRuleDraft({})
+        } else {
+          const nextRules = (rulesPayload as ServiceResourceRuleListResponse).rules
+          setServiceResourceRules(nextRules)
+          setResourceRuleDraft(
+            nextRules.reduce<Record<string, string>>((acc, rule) => {
+              acc[rule.resourceId] = String(rule.unitsRequired)
+              return acc
+            }, {})
+          )
+        }
+
+        if (isAvailabilityDateClosed) {
+          setAvailability(null)
+          return
+        }
+
+        const availabilityQuery = new URLSearchParams({ date: availabilityDate })
+        if (availabilityStaffId !== 'ALL') {
+          availabilityQuery.set('staff_member_id', availabilityStaffId)
+        }
+
+        const availabilityResponse = await fetch(
+          `/api/businesses/${selectedBusinessId}/services/${selectedService.id}/availability?${availabilityQuery.toString()}`,
+          { method: 'GET', cache: 'no-store' }
+        )
+
+        const availabilityPayload = (await availabilityResponse.json()) as
+          | AvailabilityResponse
+          | ApiErrorResponse
+
+        if (ignore) return
+
         if (!availabilityResponse.ok) {
           setAvailability(null)
           return
@@ -289,7 +487,13 @@ function ManageBusinessServicesPageContent() {
 
         setAvailability((availabilityPayload as AvailabilityResponse).availability)
       } catch {
-        if (!ignore) setAvailability(null)
+        if (!ignore) {
+          setAvailability(null)
+          setServiceResourceRules([])
+          setResourceRuleDraft({})
+        }
+      } finally {
+        if (!ignore) setIsLoadingResourceRules(false)
       }
     }
 
@@ -298,7 +502,7 @@ function ManageBusinessServicesPageContent() {
     return () => {
       ignore = true
     }
-  }, [availabilityDate, availabilityStaffId, selectedBusinessId, selectedService])
+  }, [availabilityDate, availabilityStaffId, isAvailabilityDateClosed, selectedBusinessId, selectedService])
 
   useEffect(() => {
     if (!editingServiceId) return
@@ -324,6 +528,9 @@ function ManageBusinessServicesPageContent() {
   const staffWorkspaceHref = selectedBusiness
     ? `/manage_business/staff?businessId=${selectedBusiness.id}`
     : '/manage_business/staff'
+  const resourceWorkspaceHref = selectedBusiness
+    ? `/manage_business/resources?businessId=${selectedBusiness.id}`
+    : '/manage_business/resources'
 
   const updateSelectedBusinessId = (businessId: string) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -457,8 +664,78 @@ function ManageBusinessServicesPageContent() {
     }
   }
 
+  const handleToggleResourceRule = (resourceId: string, enabled: boolean) => {
+    setResourceRuleDraft((currentValue) => {
+      if (enabled) {
+        return {
+          ...currentValue,
+          [resourceId]: currentValue[resourceId] ?? '1',
+        }
+      }
+
+      const nextValue = { ...currentValue }
+      delete nextValue[resourceId]
+      return nextValue
+    })
+  }
+
+  const handleResourceRuleUnitsChange = (resourceId: string, value: string) => {
+    setResourceRuleDraft((currentValue) => ({
+      ...currentValue,
+      [resourceId]: value,
+    }))
+  }
+
+  async function handleSaveResourceRules() {
+    if (!selectedBusinessId || !selectedService) return
+
+    const rules = Object.entries(resourceRuleDraft).map(([resourceId, unitsRequired]) => ({
+      resource_id: resourceId,
+      units_required: Number(unitsRequired),
+    }))
+
+    if (rules.some((rule) => !Number.isInteger(rule.units_required) || rule.units_required < 1)) {
+      setErrorMessage('Each selected resource rule needs a whole number of units greater than zero.')
+      return
+    }
+
+    setIsSavingResourceRules(true)
+    setErrorMessage(null)
+    setSuccessMessage(null)
+
+    try {
+      const response = await fetch(
+        `/api/businesses/${selectedBusinessId}/services/${selectedService.id}/resource-rules`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ rules }),
+        }
+      )
+
+      const payload = (await response.json()) as
+        | ServiceResourceRuleMutationResponse
+        | ApiErrorResponse
+      if (!response.ok) {
+        setErrorMessage(getApiErrorMessage(payload, 'We could not update service resource rules right now.'))
+        return
+      }
+
+      setServiceResourceRules((payload as ServiceResourceRuleMutationResponse).rules)
+      setSuccessMessage((payload as ServiceResourceRuleMutationResponse).message)
+    } catch {
+      setErrorMessage('We could not update service resource rules right now.')
+    } finally {
+      setIsSavingResourceRules(false)
+    }
+  }
+
   return (
-    <ManageBusinessShell activeNav="/manage_business/services">
+    <ManageBusinessShell
+      activeNav="/manage_business/services"
+      subNavItems={buildServicesSubNavItems(selectedBusiness?.id ?? null)}
+      activeSubNav={pathname}
+    >
       {errorMessage ? (
         <Alert variant="destructive" className="mb-6 rounded-2xl">
           <AlertTitle>Services workspace issue</AlertTitle>
@@ -565,9 +842,9 @@ function ManageBusinessServicesPageContent() {
               <p className="mt-3 text-3xl font-extrabold tracking-tight text-[#0B1C30]">{activeServices.length}</p>
             </article>
             <article className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-              <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Cash enabled</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Resource pools</p>
               <p className="mt-3 text-3xl font-extrabold tracking-tight text-[#0B1C30]">
-                {services.filter((service) => service.allowCashPayment).length}
+                {resources.length}
               </p>
             </article>
           </section>
@@ -771,8 +1048,136 @@ function ManageBusinessServicesPageContent() {
               </article>
 
               <article className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Resource rules</p>
+                    <h2 className="mt-2 text-2xl font-bold tracking-tight text-[#0B1C30]">
+                      Shared capacity requirements
+                    </h2>
+                  </div>
+                  {isLoadingResourceRules ? (
+                    <span className="text-xs font-semibold text-slate-400">Loading...</span>
+                  ) : null}
+                </div>
+
+                {!selectedService ? (
+                  <div className="mt-5 rounded-2xl border border-dashed border-slate-200 px-4 py-6 text-sm text-slate-500">
+                    Select a service from the catalog first to define the pooled resources it needs.
+                  </div>
+                ) : !resources.length ? (
+                  <div className="mt-5 rounded-2xl border border-dashed border-slate-200 px-4 py-6 text-sm text-slate-500">
+                    No resources exist for this business yet. Add rooms, chairs, stations, or equipment first.
+                    <Link
+                      href={resourceWorkspaceHref}
+                      className="mt-4 inline-flex h-10 items-center justify-center rounded-full border border-slate-200 px-4 text-sm font-semibold text-[#0B1C30] transition-colors hover:bg-slate-50"
+                    >
+                      Open resources
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="mt-5 grid gap-3">
+                    {resources.map((resource) => {
+                      const isSelected = resource.id in resourceRuleDraft
+
+                      return (
+                        <div
+                          key={resource.id}
+                          className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4"
+                        >
+                          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                            <div className="flex items-start gap-3">
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={(event) => handleToggleResourceRule(resource.id, event.target.checked)}
+                                className="mt-1 h-4 w-4 rounded border-slate-300 text-[#0B1C30] focus:ring-[#0B1C30]"
+                              />
+                              <div>
+                                <p className="text-sm font-semibold text-[#0B1C30]">{resource.name}</p>
+                                <p className="mt-1 text-xs text-slate-500">
+                                  {formatResourceTypeLabel(resource.type)} • Capacity {resource.capacity}
+                                </p>
+                                {!resource.isActive ? (
+                                  <p className="mt-2 text-xs font-semibold text-amber-700">
+                                    This resource is inactive, so any service that requires it will stop generating bookable slots.
+                                  </p>
+                                ) : null}
+                              </div>
+                            </div>
+
+                            <label className="grid gap-2 text-sm font-medium text-slate-700 md:w-[132px]">
+                              Units required
+                              <input
+                                type="number"
+                                min="1"
+                                disabled={!isSelected}
+                                value={resourceRuleDraft[resource.id] ?? '1'}
+                                onChange={(event) => handleResourceRuleUnitsChange(resource.id, event.target.value)}
+                                className="h-11 rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-[#0B1C30] disabled:cursor-not-allowed disabled:opacity-60"
+                              />
+                            </label>
+                          </div>
+                        </div>
+                      )
+                    })}
+
+                    <div className="flex flex-wrap gap-3">
+                      <button
+                        type="button"
+                        onClick={handleSaveResourceRules}
+                        disabled={isSavingResourceRules}
+                        className="inline-flex h-11 items-center justify-center rounded-full bg-[#0B1C30] px-5 text-sm font-semibold text-white transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
+                      >
+                        {isSavingResourceRules ? 'Saving...' : 'Save resource rules'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setResourceRuleDraft(
+                            serviceResourceRules.reduce<Record<string, string>>((acc, rule) => {
+                              acc[rule.resourceId] = String(rule.unitsRequired)
+                              return acc
+                            }, {})
+                          )
+                        }}
+                        className="inline-flex h-11 items-center justify-center rounded-full border border-slate-200 px-5 text-sm font-semibold text-[#0B1C30] transition-colors hover:bg-slate-50"
+                      >
+                        Reset draft
+                      </button>
+                    </div>
+
+                    {serviceResourceRules.length ? (
+                      <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4">
+                        <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
+                          Current live rules
+                        </p>
+                        <div className="mt-3 grid gap-2">
+                          {serviceResourceRules.map((rule) => (
+                            <div
+                              key={rule.id}
+                              className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"
+                            >
+                              <div>
+                                <p className="text-sm font-semibold text-[#0B1C30]">{rule.resourceName}</p>
+                                <p className="mt-1 text-xs text-slate-500">
+                                  {formatResourceTypeLabel(rule.resourceType)} • Capacity {rule.resourceCapacity}
+                                </p>
+                              </div>
+                              <span className="inline-flex rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600">
+                                {rule.unitsRequired} required
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                )}
+              </article>
+
+              <article className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
                 <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Availability preview</p>
-                <h2 className="mt-2 text-2xl font-bold tracking-tight text-[#0B1C30]">Bookable slots</h2>
+                <h2 className="mt-2 text-2xl font-bold tracking-tight text-[#0B1C30]">Availability timeline</h2>
                 <div className="mt-5 grid gap-3">
                   <label className="grid gap-2 text-sm font-medium text-slate-700">
                     Date
@@ -791,16 +1196,23 @@ function ManageBusinessServicesPageContent() {
                 <div className="mt-5 space-y-2">
                   {!selectedService ? (
                     <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-6 text-sm text-slate-500">Select a service from the catalog to preview its slots.</div>
-                  ) : !availability?.slots.length ? (
-                    <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-6 text-sm text-slate-500">No bookable slots were generated for this date. Check staff assignments, shifts, and time off.</div>
+                  ) : isAvailabilityDateClosed ? (
+                    <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-6 text-sm text-slate-500">
+                      This business is closed on the selected date, so no customer-facing slots can be generated.
+                    </div>
+                  ) : !previewSlots.length ? (
+                    <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-6 text-sm text-slate-500">No slots were generated for this date. Check staff assignments, business hours, shifts, time off, pooled resource capacity, or whether the day is already fully in the past.</div>
                   ) : (
-                    availability.slots.slice(0, 8).map((slot) => (
+                    previewSlots.slice(0, 12).map((slot) => (
                       <div key={`${slot.staffMemberId}-${slot.startAt}`} className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                         <div>
                           <p className="text-sm font-semibold text-[#0B1C30]">{slot.staffMemberDisplayName}</p>
-                          <p className="mt-1 text-xs text-slate-500">{formatSlotTime(slot.startAt, availability.timezone)} - {formatSlotTime(slot.endAt, availability.timezone)}</p>
+                          <p className="mt-1 text-xs text-slate-500">{formatSlotTime(slot.startAt, previewTimezone)} - {formatSlotTime(slot.endAt, previewTimezone)}</p>
                         </div>
-                        <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">{availability.durationMinutes} min</span>
+                        <div className="flex items-center gap-2">
+                          <span className={`inline-flex rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${getAvailabilityStatusClassName(slot.status)}`}>{getAvailabilityStatusLabel(slot.status)}</span>
+                          <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">{previewDurationMinutes} min</span>
+                        </div>
                       </div>
                     ))
                   )}

@@ -31,6 +31,7 @@ export async function GET(
     const paramsQuery = new URLSearchParams()
     if (date) paramsQuery.set('date', date)
     if (staffMemberId) paramsQuery.set('staff_member_id', staffMemberId)
+    paramsQuery.set('include_timeline', 'true')
 
     const backendURL = getBackendBaseUrl()
     const query = paramsQuery.toString()
