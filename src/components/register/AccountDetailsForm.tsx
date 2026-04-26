@@ -6,10 +6,12 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 
 import AuthErrorAlert from '@/components/auth/AuthErrorAlert'
+import SocialProfileCompletionCard from '@/components/auth/SocialProfileCompletionCard'
 import FormInput from './FormInput'
 import PasswordInput from './PasswordInput'
 import SocialAuthButton from './SocialAuthButton'
 import { useAuthContext } from '@/context/AuthContext'
+import { useSocialAuthFlow } from '@/hooks/useSocialAuthFlow'
 import type { ApiErrorResponse, AuthActionSuccessResponse } from '@/types/auth'
 
 type RegisterFormState = {
@@ -43,13 +45,15 @@ function AccountDetailsFormContent() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const returnUrl = searchParams.get('returnUrl')
   const loginHref = returnUrl ? `/login?returnUrl=${encodeURIComponent(returnUrl)}` : '/login'
+  const socialAuth = useSocialAuthFlow({ returnUrl })
 
-  const isBusy = isSubmitting || isPending
+  const isBusy = isSubmitting || isPending || socialAuth.isSubmitting
 
   const updateField = (field: keyof RegisterFormState, value: string) => {
     setFormState((current) => ({ ...current, [field]: value }))
     setFieldErrors((current) => ({ ...current, [field]: undefined }))
     setFormError(null)
+    socialAuth.setError(null)
   }
 
   const validateForm = () => {
@@ -135,6 +139,16 @@ function AccountDetailsFormContent() {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6 w-full" noValidate>
       {formError ? <AuthErrorAlert message={formError} /> : null}
+      {socialAuth.error ? <AuthErrorAlert message={socialAuth.error} /> : null}
+
+      {socialAuth.pendingProfileCompletion ? (
+        <SocialProfileCompletionCard
+          provider={socialAuth.pendingProfileCompletion.provider}
+          disabled={isBusy}
+          onSubmit={(firstName, lastName) => socialAuth.completeSocialProfile(firstName, lastName)}
+          onCancel={socialAuth.resetSocialState}
+        />
+      ) : null}
 
       <div className="flex flex-col sm:flex-row gap-4">
         <FormInput
@@ -228,8 +242,16 @@ function AccountDetailsFormContent() {
       </div>
 
       <div className="flex gap-3">
-        <SocialAuthButton provider="google" disabled={isBusy} />
-        <SocialAuthButton provider="apple" disabled={isBusy} />
+        <SocialAuthButton
+          provider="google"
+          disabled={isBusy}
+          onClick={() => void socialAuth.startSocialAuth('google')}
+        />
+        <SocialAuthButton
+          provider="apple"
+          disabled={isBusy}
+          onClick={() => void socialAuth.startSocialAuth('apple')}
+        />
       </div>
     </form>
   )

@@ -6,7 +6,14 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import type { FormEvent } from 'react'
 
 import AuthErrorAlert from '@/components/auth/AuthErrorAlert'
+import SocialProfileCompletionCard from '@/components/auth/SocialProfileCompletionCard'
 import { useAuthContext } from '@/context/AuthContext'
+import { useSocialAuthFlow } from '@/hooks/useSocialAuthFlow'
+import {
+  clearPendingSocialLinkIntent,
+  getPendingSocialLinkIntent,
+} from '@/lib/social-link-intent'
+import { getSocialProviderLabel, type SocialProvider } from '@/lib/firebase-client'
 import type { ApiErrorResponse, AuthActionSuccessResponse } from '@/types/auth'
 
 const GoogleIcon = () => (
@@ -55,13 +62,20 @@ function LoginFormContent() {
   const [formError, setFormError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const returnUrl = searchParams.get('returnUrl')
+  const rawSocialLinkRequired = searchParams.get('socialLinkRequired')
+  const socialLinkRequiredProvider: SocialProvider | null =
+    rawSocialLinkRequired === 'google' || rawSocialLinkRequired === 'apple'
+      ? rawSocialLinkRequired
+      : null
   const registerHref = returnUrl ? `/register?returnUrl=${encodeURIComponent(returnUrl)}` : '/register'
+  const socialAuth = useSocialAuthFlow({ returnUrl })
 
-  const isBusy = isSubmitting || isPending
+  const isBusy = isSubmitting || isPending || socialAuth.isSubmitting
 
   const resetErrors = () => {
     setFieldErrors({})
     setFormError(null)
+    socialAuth.setError(null)
   }
 
   const validateForm = () => {
@@ -120,11 +134,12 @@ function LoginFormContent() {
       }
 
       const result = payload as AuthActionSuccessResponse
+      const pendingSocialLink = getPendingSocialLinkIntent()
       keepLoaderVisible = true
       setSession(result.session)
 
       startTransition(() => {
-        router.replace(result.redirectTo)
+        router.replace(pendingSocialLink ? '/link-social' : result.redirectTo)
         router.refresh()
       })
     } catch (error) {
@@ -150,23 +165,65 @@ function LoginFormContent() {
       </div>
 
       {formError ? <AuthErrorAlert message={formError} /> : null}
+      {socialAuth.error ? <AuthErrorAlert message={socialAuth.error} /> : null}
+
+      {socialLinkRequiredProvider ? (
+        <div className="rounded-2xl border border-[rgba(37,99,235,0.20)] bg-[#EFF6FF] p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex flex-col gap-1">
+              <p className="font-inter text-[10px] font-black uppercase tracking-[1.4px] text-[#1D4ED8]">
+                Account Linking Required
+              </p>
+              <p className="font-inter text-sm text-[#1E3A8A]">
+                Sign in with your email and password first, then we&apos;ll help you connect{' '}
+                {getSocialProviderLabel(socialLinkRequiredProvider)} to this existing account.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                clearPendingSocialLinkIntent()
+                router.replace(returnUrl ? `/login?returnUrl=${encodeURIComponent(returnUrl)}` : '/login')
+              }}
+              className="text-left font-inter text-xs font-bold uppercase tracking-[1.2px] text-[#1D4ED8] hover:underline"
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {socialAuth.pendingProfileCompletion ? (
+        <SocialProfileCompletionCard
+          provider={socialAuth.pendingProfileCompletion.provider}
+          disabled={isBusy}
+          onSubmit={(firstName, lastName) => socialAuth.completeSocialProfile(firstName, lastName)}
+          onCancel={socialAuth.resetSocialState}
+        />
+      ) : null}
 
       <div className="flex flex-col gap-3">
         <button
           type="button"
-          disabled
-          className="flex items-center justify-center gap-3 w-full py-3 px-4 border border-[rgba(198,198,205,0.50)] font-inter text-sm font-medium text-[#0B1C30] opacity-60 cursor-not-allowed"
+          onClick={() => void socialAuth.startSocialAuth('google')}
+          disabled={isBusy}
+          className={`flex items-center justify-center gap-3 w-full py-3 px-4 border border-[rgba(198,198,205,0.50)] font-inter text-sm font-medium text-[#0B1C30] ${
+            isBusy ? 'cursor-not-allowed opacity-60' : 'hover:bg-slate-50'
+          }`}
         >
           <GoogleIcon />
-          Continue with Google
+          {isBusy ? 'Please Wait...' : 'Continue with Google'}
         </button>
         <button
           type="button"
-          disabled
-          className="flex items-center justify-center gap-3 w-full py-3 px-4 border border-[rgba(198,198,205,0.50)] font-inter text-sm font-medium text-[#0B1C30] opacity-60 cursor-not-allowed"
+          onClick={() => void socialAuth.startSocialAuth('apple')}
+          disabled={isBusy}
+          className={`flex items-center justify-center gap-3 w-full py-3 px-4 border border-[rgba(198,198,205,0.50)] font-inter text-sm font-medium text-[#0B1C30] ${
+            isBusy ? 'cursor-not-allowed opacity-60' : 'hover:bg-slate-50'
+          }`}
         >
           <AppleIcon />
-          Continue with Apple
+          {isBusy ? 'Please Wait...' : 'Continue with Apple'}
         </button>
       </div>
 
@@ -218,13 +275,12 @@ function LoginFormContent() {
             >
               Password
             </label>
-            <button
-              type="button"
-              disabled
-              className="font-inter text-xs font-bold text-slate-400 cursor-not-allowed"
+            <Link
+              href="/forgot-password"
+              className="font-inter text-xs font-bold text-[#0B1C30] hover:underline"
             >
               Forgot Password?
-            </button>
+            </Link>
           </div>
           <div
             className={`relative flex items-center border bg-white transition-colors ${

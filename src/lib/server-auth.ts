@@ -8,6 +8,7 @@ import type {
   AuthSession,
   AuthUser,
   BackendAuthResponse,
+  BackendUserProfileResponse,
   SessionResponse,
 } from '@/types/auth'
 
@@ -44,6 +45,7 @@ export const toAuthUser = (response: BackendAuthResponse): AuthUser => {
     email: response.email,
     phone: response.phone ?? null,
     authProvider: response.auth_provider,
+    authMethods: response.auth_methods ?? [],
     roles: normalizeRoles(response.roles),
     createdAt: response.created_at,
     updatedAt: response.updated_at,
@@ -54,6 +56,18 @@ export const toAuthSession = (response: BackendAuthResponse): AuthSession => {
   return {
     user: toAuthUser(response),
     expiresAt: response.expires_at,
+  }
+}
+
+export const mergeStoredAuthWithProfile = (
+  profile: BackendUserProfileResponse,
+  storedCookie: AuthCookiePayload
+): BackendAuthResponse => {
+  return {
+    ...profile,
+    access_token: storedCookie.accessToken,
+    token_type: storedCookie.tokenType,
+    expires_at: storedCookie.expiresAt,
   }
 }
 
@@ -74,7 +88,12 @@ export const parseAuthCookie = (rawCookie: string | undefined) => {
       accessToken: parsed.accessToken,
       tokenType: typeof parsed.tokenType === 'string' ? parsed.tokenType : 'Bearer',
       expiresAt: typeof parsed.expiresAt === 'string' ? parsed.expiresAt : '',
-      user: parsed.user as AuthUser,
+      user: {
+        ...(parsed.user as AuthUser),
+        authMethods: Array.isArray((parsed.user as Partial<AuthUser>).authMethods)
+          ? ((parsed.user as Partial<AuthUser>).authMethods as string[])
+          : [],
+      },
     } satisfies AuthCookiePayload
   } catch {
     return null

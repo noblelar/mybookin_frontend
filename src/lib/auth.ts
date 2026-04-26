@@ -58,7 +58,17 @@ export const routeAccessMap: AccessMap[] = [
 
 export const GUEST_ONLY_PATHS = new Set<string>(['/login', '/register'])
 
-const PUBLIC_EXACT = new Set<string>(['/', '/login', '/register', '/admin/login', '/discover', '/find', '/accept-staff-invite'])
+const PUBLIC_EXACT = new Set<string>([
+  '/',
+  '/login',
+  '/register',
+  '/forgot-password',
+  '/reset-password',
+  '/admin/login',
+  '/discover',
+  '/find',
+  '/accept-staff-invite',
+])
 const PUBLIC_PREFIXES = [
   '/businesses',
   '/_next',

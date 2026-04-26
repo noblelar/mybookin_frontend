@@ -7,6 +7,7 @@ export interface BackendUserProfileResponse {
   email: string
   phone?: string | null
   auth_provider: string
+  auth_methods?: string[]
   roles: string[]
   created_at: string
   updated_at: string
@@ -25,6 +26,7 @@ export interface AuthUser {
   email: string
   phone: string | null
   authProvider: string
+  authMethods: string[]
   roles: AuthRole[]
   createdAt: string
   updatedAt: string
@@ -48,6 +50,22 @@ export interface AuthActionSuccessResponse {
   redirectTo: string
 }
 
+export interface SocialLinkSuccessResponse {
+  message: string
+  session: AuthSession
+}
+
+export interface LinkedSocialProvider {
+  provider: string
+  linked_at: string
+  last_sign_in_at?: string | null
+}
+
+export interface SocialProvidersResponse {
+  auth_methods?: string[]
+  providers: LinkedSocialProvider[]
+}
+
 export interface SessionResponse {
   authenticated: boolean
   session: AuthSession | null
@@ -55,4 +73,5 @@ export interface SessionResponse {
 
 export interface ApiErrorResponse {
   message: string
+  code?: string
 }
